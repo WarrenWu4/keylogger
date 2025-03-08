@@ -26,7 +26,7 @@ ifeq ($(OS),Windows_NT)
     CXX = x86_64-w64-mingw32-g++
     CXXFLAGS = -Wall -Wextra -std=c++17 -mwindows
     LDFLAGS = -lgdi32 -luser32
-    SRC = keylogger_tray.cpp
+    SRC = main.cpp
     TARGET = $(APP_NAME).exe
 endif
 
