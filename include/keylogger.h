@@ -5,9 +5,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
+#endif
 #include <iostream>
 #include <cstring>
-#endif
+#include <filesystem>
+#include <regex>
 
 #include "../helper.h"
 
@@ -16,8 +18,26 @@ public:
 #ifdef __linux__
   /*
   * Hardcode to correct event device for now
+  * TODO: Make this dynamic
+  * get all inputs from /dev/input/event*
+  * ask user to type keys
+  * find the correct device based on the key presses
   */
   std::string get_kb_device() {
+    std::string path = "/dev/input";
+    std::regex pattern("event[0-9]+");
+       try {
+        for (const auto& entry : std::filesystem::directory_iterator(path)) {
+            if (std::filesystem::is_regular_file(entry)) {
+                std::string filename = entry.path().filename().string();
+                if (std::regex_match(filename, pattern)) {
+                    std::cout << entry.path() << std::endl;
+                }
+            }
+        }
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Filesystem error: " << e.what() << std::endl;
+    }
     return "/dev/input/event3";
   }
 

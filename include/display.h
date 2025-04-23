@@ -1,14 +1,17 @@
 #pragma once
 
+#ifdef __linux__
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <unistd.h>
 #include <iostream>
 #include <cstring>
+#endif
 
 class KeyloggerDisplay {
 public:
   void display() {
+#ifdef __linux__
     Display* display = XOpenDisplay(nullptr);
     if (!display) {
       std::cerr << "Cannot open X display\n";
@@ -57,5 +60,6 @@ public:
     XFreeGC(display, gc);
     XDestroyWindow(display, window);
     XCloseDisplay(display);
+#endif
   }
 };

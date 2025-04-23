@@ -21,7 +21,6 @@ else ifeq ($(UNAME_S),Darwin)
 else ifeq ($(OS),Windows_NT)
     CXX = g++ 
     CXXFLAGS = -Wall -Wextra -std=c++17
-    LDFLAGS = `` 
     SRC = main.cpp
     TARGET = $(APP_NAME).exe
 	OS := Windows 
@@ -31,7 +30,7 @@ endif
 
 all:
 	@echo Detected OS: $(OS)
-	$(CXX) $(CXXFLAGS) $(SRC) -o $(TARGET) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) $(SRC) -o $(TARGET)
 
 clean:
 	rm -f $(TARGET)
