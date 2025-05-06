@@ -1,5 +1,11 @@
 # Goals for today
-- [x] write a function that gets all the keyboard devices
-- [ ] write a function that reads from the keyboard device based on device path
+- [ ] read from keyboard devices
 
-don't forget to add -lsetupapi and -mwindows to the linker flags
+### Bugs
+- [ ] fix clean Makefile command not being able to find correct file paths (i hate this shit ;-;)
+
+### Complete
+- [x] log events to log file
+- [x] write function that gets keyboard devices
+- [x] setup window gui
+- [x] created basic makefile commands
