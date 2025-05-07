@@ -1,10 +1,10 @@
 ### Todo
 - [ ] check if keyboard device listing is required
 - [ ] test with different keyboard inputs
-- [ ] change window gui type to hidden
-- [ ] update vkey to wstring to include all key mappings
 - [ ] research different displays types (need: always on top + delete after timeout)
 - [ ] add open/close to system tray
+- [ ] add kill switch functionality
+- [ ] add better key display (display actual characters instead of just direct mappings (so SHIFT+a = A))
 
 ### Bugs
 - [ ] fix clean Makefile command not being able to find correct file paths (i hate this shit ;-;)
@@ -16,3 +16,5 @@
 - [x] setup window gui
 - [x] created basic makefile commands
 - [x] read from keyboard devices
+- [x] update vkey to wstring to include all key mappings
+- [x] change window gui type to hidden
