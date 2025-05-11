@@ -3,6 +3,7 @@
 #endif
 
 #include <windows.h>
+#include <shellapi.h>
 #include <initguid.h>
 #include <devguid.h>
 #include <setupapi.h>
@@ -12,13 +13,19 @@
 
 #pragma comment(lib, "setupapi.lib")
 
+// tray icon initialization and definitions
+#define WM_TRAYICON (WM_USER + 1)
+#define ID_TRAY_EXIT 1001
+NOTIFYICONDATA nid = {};
+HMENU hTrayMenu = NULL;
+HICON hIcon = NULL;
+
 DEFINE_GUID(GUID_DEVINTERFACE_KEYBOARD,
     0x884b96c3, 0x56ef, 0x11d1,
     0xbc, 0x8c, 0x00, 0xa0, 0xc9, 0x14, 0x05, 0xdd);
 
 std::wofstream logFile("keylogger.log", std::ios::app);
 std::vector<PWSTR> keyboardDevicePaths;
-
 std::unordered_map<DWORD, std::wstring> vkeyToWString = {
     {0x01, L"Left Mouse Button"},
     {0x02, L"Right Mouse Button"},
@@ -78,6 +85,24 @@ void LogMessage(const std::wstring& message) {
     logFile.flush();
 }
 
+void AddTrayIcon(HWND hwnd) {
+    nid.cbSize = sizeof(NOTIFYICONDATA);
+    nid.hWnd = hwnd;
+    nid.uID = 1;
+    nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+    nid.uCallbackMessage = WM_TRAYICON;
+    hIcon = (HICON)LoadImage(NULL, L"logo.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
+    if (hIcon) {
+        nid.hIcon = hIcon;
+    } else {
+        nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    }
+    wcscpy_s(nid.szTip, L"Keylogger");
+    Shell_NotifyIcon(NIM_ADD, &nid);
+    hTrayMenu = CreatePopupMenu();
+    AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EXIT, L"Exit");
+}
+
 void ListKeyboardDevicePaths() {
     std::vector<PWSTR> keyboardPaths;
     HDEVINFO deviceInfo = SetupDiGetClassDevs(&GUID_DEVINTERFACE_KEYBOARD, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
@@ -102,6 +127,9 @@ void ListKeyboardDevicePaths() {
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_DESTROY:
+            if (hIcon) {
+                DestroyIcon(hIcon);
+            }
             PostQuitMessage(0);
             return 0;
         case WM_PAINT: {
@@ -126,6 +154,25 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 }
             }
             delete[] lpb;
+            return 0;
+        }
+        case WM_TRAYICON: {
+            if (lParam == WM_RBUTTONUP) {
+                POINT pt;
+                GetCursorPos(&pt);
+                SetForegroundWindow(hwnd); // Required for menu to work right
+                TrackPopupMenu(hTrayMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hwnd, NULL);
+            }
+            return 0;
+        }
+        case WM_COMMAND: {
+            if (LOWORD(wParam) == ID_TRAY_EXIT) {
+                Shell_NotifyIcon(NIM_DELETE, &nid);
+                if (hTrayMenu) {
+                    DestroyMenu(hTrayMenu);
+                }
+                PostQuitMessage(0);
+            }
             return 0;
         }
     }
@@ -171,6 +218,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         MessageBox(NULL, L"Failed to register raw input devices!", L"Error", MB_OK);
         return 1;
     }
+    // add tray icon
+    AddTrayIcon(hwnd);
     // message loop
     LogMessage(L"Entering message loop");
     MSG msg = { };
