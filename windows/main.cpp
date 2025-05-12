@@ -10,6 +10,7 @@
 #include <vector>
 #include <fstream>
 #include <unordered_map>
+#include <deque>
 
 #pragma comment(lib, "setupapi.lib")
 
@@ -20,12 +21,15 @@ NOTIFYICONDATA nid = {};
 HMENU hTrayMenu = NULL;
 HICON hIcon = NULL;
 
+// guid for keyboard interfaces
 DEFINE_GUID(GUID_DEVINTERFACE_KEYBOARD,
     0x884b96c3, 0x56ef, 0x11d1,
     0xbc, 0x8c, 0x00, 0xa0, 0xc9, 0x14, 0x05, 0xdd);
 
+// logging and important keyboard vars
 std::wofstream logFile("keylogger.log", std::ios::app);
 std::vector<PWSTR> keyboardDevicePaths;
+std::deque<std::wstring> keyBuffer;
 std::unordered_map<DWORD, std::wstring> vkeyToWString = {
     {0x01, L"Left Mouse Button"},
     {0x02, L"Right Mouse Button"},
@@ -79,6 +83,14 @@ std::unordered_map<DWORD, std::wstring> vkeyToWString = {
     {0xC0, L"~"}
 };
 
+std::wstring VKeyToWString(DWORD vkey) {
+    auto it = vkeyToWString.find(vkey);
+    if (it != vkeyToWString.end()) {
+        return it->second;
+    }
+    return L" ";
+}
+
 void LogMessage(const std::wstring& message) {
     // flush to make sure message is written immediately
     logFile << message << std::endl;
@@ -103,27 +115,6 @@ void AddTrayIcon(HWND hwnd) {
     AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EXIT, L"Exit");
 }
 
-void ListKeyboardDevicePaths() {
-    std::vector<PWSTR> keyboardPaths;
-    HDEVINFO deviceInfo = SetupDiGetClassDevs(&GUID_DEVINTERFACE_KEYBOARD, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
-    if (deviceInfo == INVALID_HANDLE_VALUE) { return;  }
-    SP_DEVICE_INTERFACE_DATA devInterfaceData = {};
-    devInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
-    for (DWORD i = 0; SetupDiEnumDeviceInterfaces(deviceInfo, NULL, &GUID_DEVINTERFACE_KEYBOARD, i, &devInterfaceData); i++) {
-        DWORD requiredSize = 0;
-        SetupDiGetDeviceInterfaceDetail(deviceInfo, &devInterfaceData, NULL, 0, &requiredSize, NULL);
-        PSP_DEVICE_INTERFACE_DETAIL_DATA devDetail = (PSP_DEVICE_INTERFACE_DETAIL_DATA)malloc(requiredSize);
-        if (!devDetail) { continue; } 
-        devDetail->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
-        if (SetupDiGetDeviceInterfaceDetail(deviceInfo, &devInterfaceData, devDetail, requiredSize, NULL, NULL)) {
-            keyboardDevicePaths.push_back(devDetail->DevicePath);
-            LogMessage(L"Found keyboard device: " + std::wstring(devDetail->DevicePath));
-        }
-        free(devDetail);
-    }
-    SetupDiDestroyDeviceInfoList(deviceInfo);
-}
-
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_DESTROY:
@@ -135,8 +126,17 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
+            SetBkColor(hdc, RGB(0, 0, 0));
+            SetTextColor(hdc, RGB(255, 255, 255));
+            SelectObject(hdc, GetStockObject(DEFAULT_GUI_FONT));
             // write initial program message
-            TextOut(hdc, 10, 10, L"Keylogger", 9);
+            RECT rect;
+            std::wstring keys = L"";
+            for (const auto& key : keyBuffer) {
+                keys += key + L"";
+            }
+            GetClientRect(hwnd, &rect);
+            DrawText(hdc, keys.c_str(), -1, &rect, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
             EndPaint(hwnd, &ps);
             return 0;
         }
@@ -149,7 +149,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 RAWINPUT* raw = (RAWINPUT*)lpb;
                 if (raw->header.dwType == RIM_TYPEKEYBOARD) {
                     if (!(raw->data.keyboard.Flags & RI_KEY_BREAK) && raw->data.keyboard.Message == WM_KEYDOWN) {
-                        LogMessage(L"Key Pressed: " + vkeyToWString[raw->data.keyboard.VKey] + L" " + std::to_wstring(raw->data.keyboard.VKey));
+                        LogMessage(L"Key Pressed: " + VKeyToWString(raw->data.keyboard.VKey) + L" " + std::to_wstring(raw->data.keyboard.VKey));
+                        keyBuffer.push_back(VKeyToWString(raw->data.keyboard.VKey));
+                        if (keyBuffer.size() > 10) {
+                            keyBuffer.pop_front();
+                        }
+                        InvalidateRect(hwnd, NULL, TRUE);
                     }
                 }
             }
@@ -181,12 +186,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
     LogMessage(L"Starting program");
-    // get keyboard device paths
-    LogMessage(L"Listing keyboard device paths");
-    ListKeyboardDevicePaths();
     // register window class
     LogMessage(L"Registering window class");
-    const wchar_t CLASS_NAME[] = L"KeyloggerClass";
+    const wchar_t CLASS_NAME[] = L"KeyDisplay";
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
@@ -198,15 +200,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     // create window
     LogMessage(L"Creating window");
     HWND hwnd = CreateWindowEx(
-        WS_EX_TOOLWINDOW, CLASS_NAME, L"Keylogger", WS_POPUP,
-        CW_USEDEFAULT, CW_USEDEFAULT, 300, 200,
+        WS_EX_TOPMOST | WS_EX_NOACTIVATE, CLASS_NAME, L"Keylogger", WS_POPUP,
+        CW_USEDEFAULT, CW_USEDEFAULT, 600, 40,
         NULL, NULL, hInstance, NULL
     );
     if (hwnd == NULL) {
         MessageBox(NULL, L"Window creation failed!", L"Error", MB_OK);
         return 1;
     }
-    ShowWindow(hwnd, SW_HIDE);
+    ShowWindow(hwnd, SW_SHOW);
+    UpdateWindow(hwnd);
     // register raw input from keyboards
     LogMessage(L"Registering raw input");
     RAWINPUTDEVICE rid[1];
@@ -220,6 +223,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     }
     // add tray icon
     AddTrayIcon(hwnd);
+    SetWindowPos(hwnd, HWND_TOPMOST, 0, 100, 600, 40, SWP_NOACTIVATE | SWP_SHOWWINDOW);
     // message loop
     LogMessage(L"Entering message loop");
     MSG msg = { };
