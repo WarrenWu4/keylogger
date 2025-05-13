@@ -12,6 +12,9 @@
 #include <unordered_map>
 #include <deque>
 
+// user created files
+#include "include/vkey.h"
+
 #pragma comment(lib, "setupapi.lib")
 
 // tray icon initialization and definitions
@@ -83,6 +86,12 @@ std::unordered_map<DWORD, std::wstring> vkeyToWString = {
     {0xC0, L"~"}
 };
 
+// window variables (fonts, etc.)
+HFONT hFont = CreateFontW(
+    28, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+    DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI"
+);
+
 std::wstring VKeyToWString(DWORD vkey) {
     auto it = vkeyToWString.find(vkey);
     if (it != vkeyToWString.end()) {
@@ -103,7 +112,7 @@ void AddTrayIcon(HWND hwnd) {
     nid.uID = 1;
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_TRAYICON;
-    hIcon = (HICON)LoadImage(NULL, L"logo.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
+    hIcon = (HICON)LoadImage(NULL, L"resources/logo.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
     if (hIcon) {
         nid.hIcon = hIcon;
     } else {
@@ -115,20 +124,42 @@ void AddTrayIcon(HWND hwnd) {
     AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EXIT, L"Exit");
 }
 
+void ResizeWindowToFitText(HWND hwnd, const std::wstring &text, HFONT hFont) {
+    HDC hdc = GetDC(hwnd);
+    HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
+    SIZE size;
+    GetTextExtentPoint32W(hdc, text.c_str(), text.length(), &size);
+    SelectObject(hdc, oldFont);
+    ReleaseDC(hwnd, hdc);
+    int padding = 32;
+    int newWidth = size.cx + padding;
+    RECT desktop;
+    GetWindowRect(GetDesktopWindow(), &desktop);
+    int screenHeight = desktop.bottom;
+    int screenWidth = desktop.right;
+    int height = 40;
+    int x = screenWidth - newWidth - padding;
+    int y = screenHeight - height;
+    MoveWindow(hwnd, x, y, newWidth, height, TRUE);
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
-        case WM_DESTROY:
+        case WM_DESTROY: {
+            Shell_NotifyIcon(NIM_DELETE, &nid);
             if (hIcon) {
                 DestroyIcon(hIcon);
             }
             PostQuitMessage(0);
             return 0;
+        }
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
             SetBkColor(hdc, RGB(0, 0, 0));
             SetTextColor(hdc, RGB(255, 255, 255));
-            SelectObject(hdc, GetStockObject(DEFAULT_GUI_FONT));
+            // SelectObject(hdc, GetStockObject(DEFAULT_GUI_FONT));
+            HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
             // write initial program message
             RECT rect;
             std::wstring keys = L"";
@@ -137,6 +168,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             }
             GetClientRect(hwnd, &rect);
             DrawText(hdc, keys.c_str(), -1, &rect, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+            SelectObject(hdc, oldFont);
+            DeleteObject(hFont);
             EndPaint(hwnd, &ps);
             return 0;
         }
@@ -151,10 +184,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                     if (!(raw->data.keyboard.Flags & RI_KEY_BREAK) && raw->data.keyboard.Message == WM_KEYDOWN) {
                         LogMessage(L"Key Pressed: " + VKeyToWString(raw->data.keyboard.VKey) + L" " + std::to_wstring(raw->data.keyboard.VKey));
                         keyBuffer.push_back(VKeyToWString(raw->data.keyboard.VKey));
-                        if (keyBuffer.size() > 10) {
+                        if (keyBuffer.size() > 24) {
                             keyBuffer.pop_front();
                         }
                         InvalidateRect(hwnd, NULL, TRUE);
+                        ResizeWindowToFitText(hwnd, keyBuffer.back(), hFont);
                     }
                 }
             }
@@ -223,7 +257,18 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     }
     // add tray icon
     AddTrayIcon(hwnd);
-    SetWindowPos(hwnd, HWND_TOPMOST, 0, 100, 600, 40, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    // set windowp position
+    RECT desktopRect;
+    if (!GetWindowRect(GetDesktopWindow(), &desktopRect)) {
+        MessageBox(NULL, L"Failed to get desktop window rect!", L"Error", MB_OK);
+        return 1;
+    }
+    int padding = 32;
+    int windowWidth = 120;
+    int windowHeight = 40;
+    int x = desktopRect.right - windowWidth - padding;
+    int y = desktopRect.bottom - windowHeight - padding;
+    SetWindowPos(hwnd, HWND_TOPMOST, x, y, windowWidth, windowHeight, SWP_NOACTIVATE | SWP_SHOWWINDOW);
     // message loop
     LogMessage(L"Entering message loop");
     MSG msg = { };
