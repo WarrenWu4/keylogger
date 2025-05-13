@@ -1,8 +1,0 @@
-- add system tray for windows
-- add support for linux
-- add windows support
-- add mac support
-
-- fix display text issues
-- add more robust get_kb_device function
-- cleanup code base
