@@ -1,5 +1,9 @@
 #pragma once
 
 #include <windows.h>
+#include <string>
+#include <deque>
 
-void SetDisplayText(HDC hdc, const wchar_t* text);
+void ResizeWindowToText(HWND hwnd, HFONT hFont, std::deque<std::wstring>& keyBuffer);
+
+

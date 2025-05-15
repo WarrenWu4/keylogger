@@ -14,6 +14,7 @@
 
 // user created files
 #include "include/vkey.h"
+#include "include/display.h"
 
 #pragma comment(lib, "setupapi.lib")
 
@@ -64,25 +65,6 @@ void AddTrayIcon(HWND hwnd) {
     AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EXIT, L"Exit");
 }
 
-void ResizeWindowToFitText(HWND hwnd, const std::wstring &text, HFONT hFont) {
-    HDC hdc = GetDC(hwnd);
-    HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
-    SIZE size;
-    GetTextExtentPoint32W(hdc, text.c_str(), text.length(), &size);
-    SelectObject(hdc, oldFont);
-    ReleaseDC(hwnd, hdc);
-    int padding = 32;
-    int newWidth = size.cx + padding;
-    RECT desktop;
-    GetWindowRect(GetDesktopWindow(), &desktop);
-    int screenHeight = desktop.bottom;
-    int screenWidth = desktop.right;
-    int height = 48;
-    int x = screenWidth - newWidth - padding;
-    int y = screenHeight - height;
-    MoveWindow(hwnd, x, y, newWidth, height, TRUE);
-}
-
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_DESTROY: {
@@ -128,6 +110,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                             keyBuffer.pop_front();
                         }
                         InvalidateRect(hwnd, NULL, TRUE);
+                        ResizeWindowToText(hwnd, hFont, keyBuffer);
                     }
                 }
             }
