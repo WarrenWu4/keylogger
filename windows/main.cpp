@@ -137,7 +137,7 @@ void ResizeWindowToFitText(HWND hwnd, const std::wstring &text, HFONT hFont) {
     GetWindowRect(GetDesktopWindow(), &desktop);
     int screenHeight = desktop.bottom;
     int screenWidth = desktop.right;
-    int height = 40;
+    int height = 48;
     int x = screenWidth - newWidth - padding;
     int y = screenHeight - height;
     MoveWindow(hwnd, x, y, newWidth, height, TRUE);
@@ -265,7 +265,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     }
     int padding = 32;
     int windowWidth = 120;
-    int windowHeight = 40;
+    int windowHeight = 48;
     int x = desktopRect.right - windowWidth - padding;
     int y = desktopRect.bottom - windowHeight - padding;
     SetWindowPos(hwnd, HWND_TOPMOST, x, y, windowWidth, windowHeight, SWP_NOACTIVATE | SWP_SHOWWINDOW);
