@@ -12,7 +12,8 @@ $(EXE): $(SRC)
 	$(CXX) $(SRC) $(CXXFLAGS) $(WINFLAGS) $(LIBFLAGS) -o $(EXE)
 
 clean:
-	rm $(EXE) $(LOG_FILE)
+	if exist $(EXE) del /Q $(EXE)
+	if exist $(LOG_FILE) del /Q $(LOG_FILE) 
 
 run: $(EXE)
 	./$(EXE)
