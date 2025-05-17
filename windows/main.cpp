@@ -15,6 +15,10 @@
 // user created files
 #include "include/vkey.h"
 #include "include/display.h"
+#include "include/logging.h"
+
+// helper classes
+Logger logger(L"keylogger.log");
 
 #pragma comment(lib, "setupapi.lib")
 
@@ -30,8 +34,7 @@ DEFINE_GUID(GUID_DEVINTERFACE_KEYBOARD,
     0x884b96c3, 0x56ef, 0x11d1,
     0xbc, 0x8c, 0x00, 0xa0, 0xc9, 0x14, 0x05, 0xdd);
 
-// logging and important keyboard vars
-std::wofstream logFile("keylogger.log", std::ios::app);
+// keyboard vars
 std::vector<PWSTR> keyboardDevicePaths;
 std::deque<std::wstring> keyBuffer;
 
@@ -40,12 +43,6 @@ HFONT hFont = CreateFontW(
     28, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
     DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI"
 );
-
-void LogMessage(const std::wstring& message) {
-    // flush to make sure message is written immediately
-    logFile << message << std::endl;
-    logFile.flush();
-}
 
 void AddTrayIcon(HWND hwnd) {
     nid.cbSize = sizeof(NOTIFYICONDATA);
@@ -104,7 +101,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 RAWINPUT* raw = (RAWINPUT*)lpb;
                 if (raw->header.dwType == RIM_TYPEKEYBOARD) {
                     if (!(raw->data.keyboard.Flags & RI_KEY_BREAK) && raw->data.keyboard.Message == WM_KEYDOWN) {
-                        LogMessage(L"Key Pressed: " + GetKeyNameFromVkey(raw->data.keyboard.VKey) + L" " + std::to_wstring(raw->data.keyboard.VKey));
+                        logger.LogMessageToFile(L"Key Pressed: " + GetKeyNameFromVkey(raw->data.keyboard.VKey) + L" " + std::to_wstring(raw->data.keyboard.VKey));
                         keyBuffer.push_back(GetKeyNameFromVkey(raw->data.keyboard.VKey));
                         if (keyBuffer.size() > 60) {
                             keyBuffer.pop_front();
@@ -141,9 +138,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
-    LogMessage(L"Starting program");
+    logger.LogMessageToFile(L"Starting program");
     // register window class
-    LogMessage(L"Registering window class");
+    logger.LogMessageToFile(L"Registering window class");
     const wchar_t CLASS_NAME[] = L"KeyDisplay";
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;
@@ -154,7 +151,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 1;
     }
     // create window
-    LogMessage(L"Creating window");
+    logger.LogMessageToFile(L"Creating window");
     HWND hwnd = CreateWindowEx(
         WS_EX_TOPMOST | WS_EX_NOACTIVATE, CLASS_NAME, L"Keylogger", WS_POPUP,
         CW_USEDEFAULT, CW_USEDEFAULT, 600, 40,
@@ -167,7 +164,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
     // register raw input from keyboards
-    LogMessage(L"Registering raw input");
+    logger.LogMessageToFile(L"Registering raw input");
     RAWINPUTDEVICE rid[1];
     rid[0].usUsagePage = 0x01; // generic desktop controls
     rid[0].usUsage = 0x06; // keyboard
@@ -192,7 +189,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     int y = desktopRect.bottom - windowHeight - padding;
     SetWindowPos(hwnd, HWND_TOPMOST, x, y, windowWidth, windowHeight, SWP_NOACTIVATE | SWP_SHOWWINDOW);
     // message loop
-    LogMessage(L"Entering message loop");
+    logger.LogMessageToFile(L"Entering message loop");
     MSG msg = { };
     while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
