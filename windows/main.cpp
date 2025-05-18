@@ -8,8 +8,6 @@
 #include <devguid.h>
 #include <setupapi.h>
 #include <vector>
-#include <fstream>
-#include <unordered_map>
 #include <deque>
 
 // user created files
@@ -101,7 +99,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 RAWINPUT* raw = (RAWINPUT*)lpb;
                 if (raw->header.dwType == RIM_TYPEKEYBOARD) {
                     if (!(raw->data.keyboard.Flags & RI_KEY_BREAK) && raw->data.keyboard.Message == WM_KEYDOWN) {
-                        logger.LogMessageToFile(L"Key Pressed: " + GetKeyNameFromVkey(raw->data.keyboard.VKey) + L" " + std::to_wstring(raw->data.keyboard.VKey));
+                        logger.LogMessageToFile(L"Key Pressed: " + std::to_wstring(raw->data.keyboard.VKey));
                         keyBuffer.push_back(GetKeyNameFromVkey(raw->data.keyboard.VKey));
                         if (keyBuffer.size() > 60) {
                             keyBuffer.pop_front();

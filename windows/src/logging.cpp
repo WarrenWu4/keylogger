@@ -1,21 +1,67 @@
-#include "logging.h"
+#include "../include/logging.h"
 
-Logger::Logger(const std::wstring& filePath) : logFilePath(filePath) {
-    logFile.open(logFilePath.c_str(), std::ios::app);
-    if (!logFile.is_open()) {
-        MessageBox(NULL, L"Failed to open log file!", L"Error", MB_OK);
+Logger::Logger(const std::wstring& filePath, std::size_t maxFileSize) : filePath(filePath), maxFileSize(maxFileSize) {
+    file.open(filePath.c_str(), std::ios::app);
+    if (!file.is_open()) {
+        DWORD errorCode = GetLastError();
+        PrintErrorAndExit(L"Failed to open log file", errorCode);
     }
 }
 
 Logger::~Logger() {
-    if (logFile.is_open()) {
-        logFile.close();
+    if (file.is_open()) {
+        file.close();
     }
 }
 
 void Logger::LogMessageToFile(const std::wstring& message) {
-    if (logFile.is_open()) {
-        logFile << message << std::endl;
-        logFile.flush();
+    if (!file.is_open()) { return; }
+    /*
+    std::size_t currentSize = GetFileSize();
+    if (currentSize >= maxFileSize) {
+        file.close();
+        RotateFile();
     }
+    file.open(filePath.c_str(), std::ios::app);
+    */
+    if (file.is_open()) {
+        file << message << std::endl;
+        file.flush();
+    }
+}
+
+std::size_t Logger::GetFileSize() {
+    WIN32_FILE_ATTRIBUTE_DATA fileInfo;
+    if (GetFileAttributesExW(filePath.c_str(), GetFileExInfoStandard, &fileInfo)) {
+        LARGE_INTEGER size;
+        size.HighPart = fileInfo.nFileSizeHigh;
+        size.LowPart  = fileInfo.nFileSizeLow;
+        return static_cast<std::size_t>(size.QuadPart);
+    }
+    return 0;
+}
+
+void Logger::RotateFile() {
+    file.open(filePath.c_str(), std::ios::trunc);
+    if (!file.is_open()) {
+        DWORD errorCode = GetLastError();
+        PrintErrorAndExit(L"Failed to open log file for truncation", errorCode);
+    }
+}
+
+void Logger::PrintErrorAndExit(const std::wstring& error, DWORD errorCode) {
+    LPVOID lpMsgBuf;
+    FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        errorCode,
+        0,
+        (LPWSTR)&lpMsgBuf,
+        0,
+        NULL
+    );
+    std::wcerr << error << L"\n"
+        << L"WinAPI Error (" << errorCode << L"): " << (LPWSTR)lpMsgBuf << std::endl;
+    LocalFree(lpMsgBuf);
+    ExitProcess(errorCode);
 }
