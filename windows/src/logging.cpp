@@ -15,16 +15,14 @@ Logger::~Logger() {
 }
 
 void Logger::LogMessageToFile(const std::wstring& message) {
-    if (!file.is_open()) { return; }
-    /*
-    std::size_t currentSize = GetFileSize();
-    if (currentSize >= maxFileSize) {
-        file.close();
-        RotateFile();
-    }
-    file.open(filePath.c_str(), std::ios::app);
-    */
     if (file.is_open()) {
+        /*
+        std::size_t currentSize = GetFileSize();
+        if (currentSize >= maxFileSize) {
+            file.close();
+            RotateFile();
+        }
+        */
         file << message << std::endl;
         file.flush();
     }
