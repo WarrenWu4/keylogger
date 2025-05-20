@@ -11,7 +11,7 @@ private:
     std::size_t maxFileSize;
 
     std::size_t GetFileSize();
-    void RotateFile();
+    void TruncateStart(std::size_t bytes);
     void PrintErrorAndExit(const std::wstring& error, DWORD errorCode);
 public:
     // 10KB default size

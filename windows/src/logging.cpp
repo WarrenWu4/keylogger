@@ -39,13 +39,16 @@ std::size_t Logger::GetFileSize() {
     return 0;
 }
 
-void Logger::RotateFile() {
-    file.open(filePath.c_str(), std::ios::trunc);
-    if (!file.is_open()) {
-        DWORD errorCode = GetLastError();
-        PrintErrorAndExit(L"Failed to open log file for truncation", errorCode);
-    }
+void Logger::TruncateStart(std::size_t bytes) {
+    std::ifstream in(filePath, std::ios::binary);
+    in.seekg(bytes);
+    std::string remaining((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    in.close();
+    std::ofstream out(filePath, std::ios::binary | std::ios::trunc);
+    out.write(remaining.data(), remaining.size());
+    out.close();
 }
+
 
 void Logger::PrintErrorAndExit(const std::wstring& error, DWORD errorCode) {
     LPVOID lpMsgBuf;
