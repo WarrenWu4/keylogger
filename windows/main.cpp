@@ -180,7 +180,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         MessageBox(NULL, L"Failed to get desktop window rect!", L"Error", MB_OK);
         return 1;
     }
-    int padding = 32;
+    int padding = 64;
     int windowWidth = 120;
     int windowHeight = 48;
     int x = desktopRect.right - windowWidth - padding;
