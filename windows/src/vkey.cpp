@@ -1,7 +1,7 @@
 #include "vkey.h"
 
 const std::unordered_map<DWORD,std::wstring> vkeyToWString = {
-    // basic letter + number keys (with keypad)
+    // number keys and the keypad equivalent 
     {0x30, L"0"}, {0x60, L"0"},
     {0x31, L"1"}, {0x61, L"1"},
     {0x32, L"2"}, {0x62, L"2"},
@@ -12,13 +12,13 @@ const std::unordered_map<DWORD,std::wstring> vkeyToWString = {
     {0x37, L"7"}, {0x67, L"7"},
     {0x38, L"8"}, {0x68, L"8"},
     {0x39, L"9"}, {0x69, L"9"},
+    // letters
     {0x41, L"a"}, {0x42, L"b"}, {0x43, L"c"}, {0x44, L"d"}, {0x45, L"e"},
     {0x46, L"f"}, {0x47, L"g"}, {0x48, L"h"}, {0x49, L"i"}, {0x4A, L"j"},
     {0x4B, L"k"}, {0x4C, L"l"}, {0x4D, L"m"}, {0x4E, L"n"}, {0x4F, L"o"},
     {0x50, L"p"}, {0x51, L"q"}, {0x52, L"r"}, {0x53, L"s"}, {0x54, L"t"},
     {0x55, L"u"}, {0x56, L"v"}, {0x57, L"w"}, {0x58, L"x"}, {0x59, L"y"}, 
     {0x5A, L"z"},
-
     // special characters
     {0x08, L"\u232B"}, // backspace
     {0x09, L"\u21E5"}, // tab
@@ -39,6 +39,7 @@ const std::unordered_map<DWORD,std::wstring> vkeyToWString = {
     // decimal
     // divide
     {0xC0, L"~"}, // tilda
+    {0xDE, L"'"}, // apostrophe
 
     // f1-f24
     {0x70, L"F1"}, {0x71, L"F2"}, {0x72, L"F3"}, {0x73, L"F4"}, {0x74, L"F5"},
