@@ -7,7 +7,6 @@
 - [ ] clear display after 5 seconds of inactivity
 
 ### Bugs
-- [ ] fix clean Makefile command not being able to find correct file paths (i hate this shit ;-;)
 - [ ] feel like program has some memory leaks???
 
 ### Complete
@@ -27,3 +26,4 @@
 - [x] increase text size and size of the bar
 - [x] position bar to bottom right side  
 - [x] split features into different files to help keep organized
+- [x] fix clean Makefile command not being able to find correct file paths (i hate this shit ;-;)
