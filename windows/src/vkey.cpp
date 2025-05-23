@@ -35,11 +35,14 @@ const std::unordered_map<DWORD,std::wstring> vkeyToWString = {
     // multiply
     // add
     // separator
-    // subtract
     // decimal
     // divide
     {0xC0, L"~"}, // tilda
     {0xDE, L"'"}, // apostrophe
+    {0xBC, L","}, // comma
+    {0xBD, L"-"}, // minus/dash
+    {0xBE, L"."}, // period
+    {0xBF, L"/"}, // forward slash
 
     // f1-f24
     {0x70, L"F1"}, {0x71, L"F2"}, {0x72, L"F3"}, {0x73, L"F4"}, {0x74, L"F5"},
