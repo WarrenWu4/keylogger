@@ -16,7 +16,8 @@
 #include "include/logging.h"
 
 // helper classes
-Logger logger(L"keylogger.log");
+Logger errorLog(L"error.log");
+FixedSizeLogger keyLog(L"keys.log", 10240, 1024);
 
 #pragma comment(lib, "setupapi.lib")
 
@@ -99,7 +100,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 RAWINPUT* raw = (RAWINPUT*)lpb;
                 if (raw->header.dwType == RIM_TYPEKEYBOARD) {
                     if (!(raw->data.keyboard.Flags & RI_KEY_BREAK) && raw->data.keyboard.Message == WM_KEYDOWN) {
-                        logger.LogMessageToFile(L"Key Pressed: " + std::to_wstring(raw->data.keyboard.VKey));
+                        keyLog.addRecord(&raw->data.keyboard.VKey);
                         keyBuffer.push_back(GetKeyNameFromVkey(raw->data.keyboard.VKey));
                         if (keyBuffer.size() > 60) {
                             keyBuffer.pop_front();
@@ -136,9 +137,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
-    logger.LogMessageToFile(L"Starting program");
     // register window class
-    logger.LogMessageToFile(L"Registering window class");
     const wchar_t CLASS_NAME[] = L"KeyDisplay";
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;
@@ -149,7 +148,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 1;
     }
     // create window
-    logger.LogMessageToFile(L"Creating window");
     HWND hwnd = CreateWindowEx(
         WS_EX_TOPMOST | WS_EX_NOACTIVATE, CLASS_NAME, L"Keylogger", WS_POPUP,
         CW_USEDEFAULT, CW_USEDEFAULT, 600, 40,
@@ -162,7 +160,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
     // register raw input from keyboards
-    logger.LogMessageToFile(L"Registering raw input");
     RAWINPUTDEVICE rid[1];
     rid[0].usUsagePage = 0x01; // generic desktop controls
     rid[0].usUsage = 0x06; // keyboard
@@ -187,7 +184,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     int y = desktopRect.bottom - windowHeight - padding;
     SetWindowPos(hwnd, HWND_TOPMOST, x, y, windowWidth, windowHeight, SWP_NOACTIVATE | SWP_SHOWWINDOW);
     // message loop
-    logger.LogMessageToFile(L"Entering message loop");
     MSG msg = { };
     while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);

@@ -66,3 +66,4 @@ void Logger::PrintErrorAndExit(const std::wstring& error, DWORD errorCode) {
     LocalFree(lpMsgBuf);
     ExitProcess(errorCode);
 }
+
