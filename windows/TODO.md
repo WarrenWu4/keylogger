@@ -3,11 +3,11 @@
 - [ ] fix key buffer size and validation logic 
 
 - [ ] adding padding around bar
-- [ ] set keylogger log to fixed size to avoid memory capacity issues
 - [ ] clear display after 5 seconds of inactivity
 
 ### Bugs
 - [ ] feel like program has some memory leaks???
+- [ ] test new keylogger file logging functionality
 
 ### Complete
 - [x] log events to log file
@@ -27,3 +27,4 @@
 - [x] position bar to bottom right side  
 - [x] split features into different files to help keep organized
 - [x] fix clean Makefile command not being able to find correct file paths (i hate this shit ;-;)
+- [x] set keylogger log to fixed size to avoid memory capacity issues

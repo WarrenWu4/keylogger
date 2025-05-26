@@ -1,5 +1,6 @@
-#include "display.h"
+#include "../include/display.h"
 
+/*
 void ResizeWindowToText(HWND hwnd, HFONT hFont, std::deque<std::wstring>& keyBuffer) {
     HDC hdc = GetDC(hwnd);
     HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
@@ -21,4 +22,17 @@ void ResizeWindowToText(HWND hwnd, HFONT hFont, std::deque<std::wstring>& keyBuf
     int x = screenWidth - newWidth - padding;
     int y = screenHeight - height;
     MoveWindow(hwnd, x, y, newWidth, height, TRUE);
+}
+*/
+
+KeyWindow::KeyWindow(HWND hwnd, std::pair<int, int> size, std::pair<int, int> position, std::pair<int, int> padding, std::pair<int, int> margin) {
+
+}
+
+HWND KeyWindow::GetHandle() {
+    return hwnd;
+}
+
+void KeyWindow::WriteText(const std::wstring text) {
+
 }
