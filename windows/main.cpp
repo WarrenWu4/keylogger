@@ -9,15 +9,25 @@
 #include <setupapi.h>
 #include <vector>
 #include <deque>
+#include <utility>
 
 // user created files
 #include "include/vkey.h"
 #include "include/display.h"
 #include "include/logging.h"
 
+typedef std::pair<int, int> Vector2;
+
 // helper classes
 Logger errorLog(L"error.log");
 FixedSizeLogger keyLog(L"keys.log", 10240, 1024);
+KeyWindow display(
+    NULL,
+    Vector2(600, 40),
+    Vector2(0, 0),
+    Vector2(10, 10),
+    Vector2(10, 10)
+);
 
 #pragma comment(lib, "setupapi.lib")
 
@@ -106,7 +116,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                             keyBuffer.pop_front();
                         }
                         InvalidateRect(hwnd, NULL, TRUE);
-                        ResizeWindowToText(hwnd, hFont, keyBuffer);
+                        if (display.GetHWND() != NULL) {
+                            display.WriteText(keyBuffer.back());
+                        }
                     }
                 }
             }
@@ -137,27 +149,27 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
-    /*
     // register window class
-    const wchar_t CLASS_NAME[] = L"KeyDisplay";
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
-    wc.lpszClassName = CLASS_NAME;
+    wc.lpszClassName = L"Key Display";
     if (!RegisterClass(&wc)) {
-        MessageBox(NULL, L"Window class registration failed!", L"Error", MB_OK);
+        errorLog.LogMessageToFile(L"Window class registration failed.");
         return 1;
     }
     // create window
     HWND hwnd = CreateWindowEx(
-        WS_EX_TOPMOST | WS_EX_NOACTIVATE, CLASS_NAME, L"Keylogger", WS_POPUP,
+        WS_EX_TOPMOST | WS_EX_NOACTIVATE, L"Key Display", L"Keylogger", WS_POPUP,
         CW_USEDEFAULT, CW_USEDEFAULT, 600, 40,
         NULL, NULL, hInstance, NULL
     );
     if (hwnd == NULL) {
-        MessageBox(NULL, L"Window creation failed!", L"Error", MB_OK);
+        errorLog.LogMessageToFile(L"Window creation failed.");
         return 1;
     }
+    display.UpdateHWND(hwnd);
+    // update and show window
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
     // register raw input from keyboards
@@ -190,7 +202,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-    */
 
     return 0;
 }

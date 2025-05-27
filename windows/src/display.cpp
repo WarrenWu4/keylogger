@@ -25,12 +25,30 @@ void ResizeWindowToText(HWND hwnd, HFONT hFont, std::deque<std::wstring>& keyBuf
 }
 */
 
-KeyWindow::KeyWindow(HWND hwnd, std::pair<int, int> size, std::pair<int, int> position, std::pair<int, int> padding, std::pair<int, int> margin) {
+KeyWindow::KeyWindow(
+    HWND hwnd,
+    Vector2 size,
+    Vector2 position,
+    Vector2 padding,
+    Vector2 margin
+) {
+    this->hwnd = hwnd;
+    this->size = size;
+    this->position = position;
+    this->padding = padding;
+    this->margin = margin;
+}
+
+void KeyWindow::ResizeWindow() {
 
 }
 
-HWND KeyWindow::GetHandle() {
-    return hwnd;
+void KeyWindow::UpdateHWND(HWND hwnd) {
+    this->hwnd = hwnd;
+}
+
+HWND KeyWindow::GetHWND() {
+    return this->hwnd;
 }
 
 void KeyWindow::WriteText(const std::wstring text) {
