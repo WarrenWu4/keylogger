@@ -23,10 +23,10 @@ Logger errorLog(L"error.log");
 FixedSizeLogger keyLog(L"keys.log", 10240, 1024);
 KeyWindow display(
     NULL,
-    Vector2(600, 40),
-    Vector2(0, 0),
-    Vector2(10, 10),
-    Vector2(10, 10)
+    Vector2(120, 48), // size
+    Vector2(0, 0), // position
+    Vector2(60, 60), // padding
+    Vector2(10, 10) // margin
 );
 
 #pragma comment(lib, "setupapi.lib")
@@ -52,24 +52,6 @@ HFONT hFont = CreateFontW(
     28, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
     DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI"
 );
-
-void AddTrayIcon(HWND hwnd) {
-    nid.cbSize = sizeof(NOTIFYICONDATA);
-    nid.hWnd = hwnd;
-    nid.uID = 1;
-    nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
-    nid.uCallbackMessage = WM_TRAYICON;
-    hIcon = (HICON)LoadImage(NULL, L"resources/logo.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
-    if (hIcon) {
-        nid.hIcon = hIcon;
-    } else {
-        nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-    }
-    wcscpy_s(nid.szTip, L"Keylogger");
-    Shell_NotifyIcon(NIM_ADD, &nid);
-    hTrayMenu = CreatePopupMenu();
-    AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EXIT, L"Exit");
-}
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
@@ -149,59 +131,65 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
-    // register window class
-    WNDCLASS wc = { };
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = hInstance;
-    wc.lpszClassName = L"Key Display";
-    if (!RegisterClass(&wc)) {
-        errorLog.LogMessageToFile(L"Window class registration failed.");
+    try {
+        // register window class
+        WNDCLASS wc = { };
+        wc.lpfnWndProc = WindowProc;
+        wc.hInstance = hInstance;
+        wc.lpszClassName = L"Key Display";
+        if (!RegisterClass(&wc)) {
+            errorLog.LogMessageToFile(L"Window class registration failed.");
+            return 1;
+        }
+        // create window
+        HWND hwnd = CreateWindowEx(
+            WS_EX_TOPMOST | WS_EX_NOACTIVATE, L"Key Display", L"Keylogger", WS_POPUP,
+            CW_USEDEFAULT, CW_USEDEFAULT, 600, 40,
+            NULL, NULL, hInstance, NULL
+        );
+        if (hwnd == NULL) {
+            errorLog.LogMessageToFile(L"Window creation failed.");
+            return 1;
+        }
+        display.UpdateHWND(hwnd);
+        ShowWindow(hwnd, SW_SHOW);
+        UpdateWindow(hwnd);
+        // update and show window
+        // register raw input from keyboards
+        RAWINPUTDEVICE rid[1];
+        rid[0].usUsagePage = 0x01; // generic desktop controls
+        rid[0].usUsage = 0x06; // keyboard
+        rid[0].dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY; // receive input even when not in foreground
+        rid[0].hwndTarget = hwnd;
+        if (!RegisterRawInputDevices(rid, 1, sizeof(rid[0]))) {
+            MessageBox(NULL, L"Failed to register raw input devices!", L"Error", MB_OK);
+            return 1;
+        }
+        // add tray icon
+        nid.cbSize = sizeof(NOTIFYICONDATA);
+        nid.hWnd = hwnd;
+        nid.uID = 1;
+        nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+        nid.uCallbackMessage = WM_TRAYICON;
+        hIcon = (HICON)LoadImage(NULL, L"resources/logo.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
+        if (hIcon) {
+            nid.hIcon = hIcon;
+        } else {
+            nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+        }
+        wcscpy_s(nid.szTip, L"Keylogger");
+        Shell_NotifyIcon(NIM_ADD, &nid);
+        hTrayMenu = CreatePopupMenu();
+        AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EXIT, L"Exit");
+        // message loop
+        MSG msg = { };
+        while (GetMessage(&msg, NULL, 0, 0)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    } catch (const std::exception& e) {
+        errorLog.LogMessageToFile(L"Exception occurred: " + std::wstring(e.what(), e.what() + strlen(e.what())));
         return 1;
     }
-    // create window
-    HWND hwnd = CreateWindowEx(
-        WS_EX_TOPMOST | WS_EX_NOACTIVATE, L"Key Display", L"Keylogger", WS_POPUP,
-        CW_USEDEFAULT, CW_USEDEFAULT, 600, 40,
-        NULL, NULL, hInstance, NULL
-    );
-    if (hwnd == NULL) {
-        errorLog.LogMessageToFile(L"Window creation failed.");
-        return 1;
-    }
-    display.UpdateHWND(hwnd);
-    // update and show window
-    ShowWindow(hwnd, SW_SHOW);
-    UpdateWindow(hwnd);
-    // register raw input from keyboards
-    RAWINPUTDEVICE rid[1];
-    rid[0].usUsagePage = 0x01; // generic desktop controls
-    rid[0].usUsage = 0x06; // keyboard
-    rid[0].dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY; // receive input even when not in foreground
-    rid[0].hwndTarget = hwnd;
-    if (!RegisterRawInputDevices(rid, 1, sizeof(rid[0]))) {
-        MessageBox(NULL, L"Failed to register raw input devices!", L"Error", MB_OK);
-        return 1;
-    }
-    // add tray icon
-    AddTrayIcon(hwnd);
-    // set windowp position
-    RECT desktopRect;
-    if (!GetWindowRect(GetDesktopWindow(), &desktopRect)) {
-        MessageBox(NULL, L"Failed to get desktop window rect!", L"Error", MB_OK);
-        return 1;
-    }
-    int padding = 64;
-    int windowWidth = 120;
-    int windowHeight = 48;
-    int x = desktopRect.right - windowWidth - padding;
-    int y = desktopRect.bottom - windowHeight - padding;
-    SetWindowPos(hwnd, HWND_TOPMOST, x, y, windowWidth, windowHeight, SWP_NOACTIVATE | SWP_SHOWWINDOW);
-    // message loop
-    MSG msg = { };
-    while (GetMessage(&msg, NULL, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-
     return 0;
 }

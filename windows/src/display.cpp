@@ -1,4 +1,5 @@
 #include "../include/display.h"
+#include <winuser.h>
 
 /*
 void ResizeWindowToText(HWND hwnd, HFONT hFont, std::deque<std::wstring>& keyBuffer) {
@@ -37,6 +38,18 @@ KeyWindow::KeyWindow(
     this->position = position;
     this->padding = padding;
     this->margin = margin;
+
+    // setting window position
+    RECT desktopRect;
+    if (!GetWindowRect(GetDesktopWindow(), &desktopRect)) {
+        throw std::runtime_error("Failed to get desktop window rect.");
+    }
+    Vector2 newPosition = {
+        desktopRect.right - size.first - padding.first,
+        desktopRect.bottom - size.second - padding.second
+    };
+    SetWindowPos(hwnd, HWND_TOPMOST, newPosition.first, newPosition.second, 
+                 size.first, size.second, SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 
 void KeyWindow::ResizeWindow() {

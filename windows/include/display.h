@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <string>
 #include <deque>
+#include <stdexcept>
 
 typedef std::pair<int, int> Vector2;
 
