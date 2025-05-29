@@ -20,6 +20,9 @@ private:
     Vector2 padding;
     Vector2 margin;
 
+    // additional helpful properties
+    RECT desktopRect;
+
     // font information
     HFONT hFont = CreateFontW(
         28, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
@@ -27,10 +30,8 @@ private:
     );
 
     // helper functions
-    void ResizeWindow();
+    void ResizeWindow(Vector2 newSize);
 public:
-    KeyWindow();
-
     KeyWindow(HWND hwnd,
               Vector2 size,
               Vector2 position,
@@ -39,6 +40,7 @@ public:
               );
 
     HWND GetHWND();
+
     void UpdateHWND(HWND hwnd);
 
     void WriteText(const std::wstring text);

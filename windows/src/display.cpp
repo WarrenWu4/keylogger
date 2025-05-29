@@ -1,31 +1,6 @@
 #include "../include/display.h"
 #include <winuser.h>
 
-/*
-void ResizeWindowToText(HWND hwnd, HFONT hFont, std::deque<std::wstring>& keyBuffer) {
-    HDC hdc = GetDC(hwnd);
-    HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
-    SIZE size;
-    std::wstring keys = L"";
-    for (const auto& key : keyBuffer) {
-        keys += key + L"";
-    }
-    GetTextExtentPoint32W(hdc, keys.c_str(), keys.length(), &size);
-    SelectObject(hdc, oldFont);
-    ReleaseDC(hwnd, hdc);
-    int padding = 32;
-    int newWidth = size.cx + padding;
-    RECT desktop;
-    GetWindowRect(GetDesktopWindow(), &desktop);
-    int screenHeight = desktop.bottom;
-    int screenWidth = desktop.right;
-    int height = 48;
-    int x = screenWidth - newWidth - padding;
-    int y = screenHeight - height;
-    MoveWindow(hwnd, x, y, newWidth, height, TRUE);
-}
-*/
-
 KeyWindow::KeyWindow(
     HWND hwnd,
     Vector2 size,
@@ -40,7 +15,6 @@ KeyWindow::KeyWindow(
     this->margin = margin;
 
     // setting window position
-    RECT desktopRect;
     if (!GetWindowRect(GetDesktopWindow(), &desktopRect)) {
         throw std::runtime_error("Failed to get desktop window rect.");
     }
@@ -52,7 +26,18 @@ KeyWindow::KeyWindow(
                  size.first, size.second, SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 
-void KeyWindow::ResizeWindow() {
+void KeyWindow::ResizeWindow(Vector2 newSize) {
+    // calculate new position anchored at bottom right of screen
+    Vector2 newPosition = {
+        desktopRect.right - newSize.first - padding.first,
+        desktopRect.bottom - newSize.second - padding.second
+    };
+    /*
+    GetTextExtentPoint32W(hdc, keys.c_str(), keys.length(), &size);
+    SelectObject(hdc, oldFont);
+    ReleaseDC(hwnd, hdc);
+    */
+    MoveWindow(hwnd, newPosition.first, newPosition.second, newSize.first, newSize.second, TRUE);
 
 }
 
@@ -65,5 +50,21 @@ HWND KeyWindow::GetHWND() {
 }
 
 void KeyWindow::WriteText(const std::wstring text) {
-
+    if (hwnd == NULL) { throw std::runtime_error("Window handle is NULL."); }
+    // get size of text
+    HDC hdc = GetDC(hwnd);
+    if (hdc == NULL) { throw std::runtime_error("Failed to get device context."); }
+    SIZE size;
+    if (!GetTextExtentPoint32W(hdc, text.c_str(), text.length(), &size)) {
+        ReleaseDC(hwnd, hdc);
+        throw std::runtime_error("Failed to get text extent.");
+    }
+    ReleaseDC(hwnd, hdc);
+    // calculate new size
+    Vector2 newSize = {
+        size.cx + padding.first * 2 + margin.first * 2,
+        size.cy + padding.second * 2 + margin.second * 2
+    };
+    // resize window
+    ResizeWindow(newSize);
 }
