@@ -77,7 +77,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 keys += key + L"";
             }
             GetClientRect(hwnd, &rect);
-            DrawText(hdc, keys.c_str(), -1, &rect, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+            DrawText(hdc, keys.c_str(), -1, &rect, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
             SelectObject(hdc, oldFont);
             DeleteObject(hFont);
             EndPaint(hwnd, &ps);
