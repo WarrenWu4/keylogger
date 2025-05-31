@@ -46,6 +46,7 @@ DEFINE_GUID(GUID_DEVINTERFACE_KEYBOARD,
 // keyboard vars
 std::vector<PWSTR> keyboardDevicePaths;
 std::deque<std::wstring> keyBuffer;
+std::wstring keyNames = L"";
 
 // window variables (fonts, etc.)
 HFONT hFont = CreateFontW(
@@ -94,12 +95,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                     if (!(raw->data.keyboard.Flags & RI_KEY_BREAK) && raw->data.keyboard.Message == WM_KEYDOWN) {
                         keyLog.addRecord(&raw->data.keyboard.VKey);
                         keyBuffer.push_back(GetKeyNameFromVkey(raw->data.keyboard.VKey));
+                        keyNames += GetKeyNameFromVkey(raw->data.keyboard.VKey) + L" ";
                         if (keyBuffer.size() > 60) {
                             keyBuffer.pop_front();
                         }
+                        if (keyNames.size() > 60) {
+                            keyNames.erase(0, keyNames.find_first_of(L" ") + 1);
+                        }
                         InvalidateRect(hwnd, NULL, TRUE);
                         if (display.GetHWND() != NULL) {
-                            display.WriteText(keyBuffer.back());
+                            display.WriteText(keyNames.c_str());
                         }
                     }
                 }
