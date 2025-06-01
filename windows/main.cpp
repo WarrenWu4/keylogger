@@ -8,7 +8,6 @@
 #include <devguid.h>
 #include <setupapi.h>
 #include <vector>
-#include <deque>
 #include <utility>
 
 // user created files
@@ -21,6 +20,7 @@ typedef std::pair<int, int> Vector2;
 // helper classes
 Logger errorLog(L"error.log");
 FixedSizeLogger keyLog(L"keys.log", 10240);
+FixedSizeLogger debugLog(L"debug.log", 10240);
 KeyWindow display(
     NULL,
     Vector2(120, 48), // size
@@ -45,12 +45,11 @@ DEFINE_GUID(GUID_DEVINTERFACE_KEYBOARD,
 
 // keyboard vars
 std::vector<PWSTR> keyboardDevicePaths;
-std::deque<std::wstring> keyBuffer;
 std::wstring keyNames = L"";
 
 // window variables (fonts, etc.)
 HFONT hFont = CreateFontW(
-    28, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+    36, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
     DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI"
 );
 
@@ -71,14 +70,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             SetTextColor(hdc, RGB(255, 255, 255));
             // SelectObject(hdc, GetStockObject(DEFAULT_GUI_FONT));
             HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
-            // write initial program message
             RECT rect;
-            std::wstring keys = L"";
-            for (const auto& key : keyBuffer) {
-                keys += key + L"";
-            }
             GetClientRect(hwnd, &rect);
-            DrawText(hdc, keys.c_str(), -1, &rect, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+            DrawText(hdc, keyNames.c_str(), -1, &rect, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
             SelectObject(hdc, oldFont);
             DeleteObject(hFont);
             EndPaint(hwnd, &ps);
@@ -93,12 +87,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 RAWINPUT* raw = (RAWINPUT*)lpb;
                 if (raw->header.dwType == RIM_TYPEKEYBOARD) {
                     if (!(raw->data.keyboard.Flags & RI_KEY_BREAK) && raw->data.keyboard.Message == WM_KEYDOWN) {
-                        keyLog.write(L"Key pressed: " + std::to_wstring(raw->data.keyboard.VKey));
-                        keyBuffer.push_back(GetKeyNameFromVkey(raw->data.keyboard.VKey));
-                        keyNames += GetKeyNameFromVkey(raw->data.keyboard.VKey) + L" ";
-                        if (keyBuffer.size() > 60) {
-                            keyBuffer.pop_front();
-                        }
+                        keyLog.write(L"Key pressed: " + std::to_wstring(raw->data.keyboard.VKey) + L"\n");
+                        debugLog.write(L"Raw input received: " + GetKeyNameFromVkey(raw->data.keyboard.VKey) + L"\n");
+                        keyNames += GetKeyNameFromVkey(raw->data.keyboard.VKey);
                         if (keyNames.size() > 60) {
                             keyNames.erase(0, keyNames.find_first_of(L" ") + 1);
                         }

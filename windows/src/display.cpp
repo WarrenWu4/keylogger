@@ -32,13 +32,7 @@ void KeyWindow::ResizeWindow(Vector2 newSize) {
         desktopRect.right - newSize.first - padding.first,
         desktopRect.bottom - newSize.second - padding.second
     };
-    /*
-    GetTextExtentPoint32W(hdc, keys.c_str(), keys.length(), &size);
-    SelectObject(hdc, oldFont);
-    ReleaseDC(hwnd, hdc);
-    */
     MoveWindow(hwnd, newPosition.first, newPosition.second, newSize.first, newSize.second, TRUE);
-
 }
 
 void KeyWindow::UpdateHWND(HWND hwnd) {

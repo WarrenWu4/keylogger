@@ -1,6 +1,5 @@
 ### Todo
 - [ ] increase font size and visibility
-- [ ] fix key buffer size and validation logic 
 
 - [ ] improve key display and virtual key mapping feature
 - [ ] add settings menu from tray icon
@@ -33,3 +32,4 @@
 - [x] fix clean Makefile command not being able to find correct file paths (i hate this shit ;-;)
 - [x] set keylogger log to fixed size to avoid memory capacity issues
 - [x] test new keylogger file logging functionality
+- [x] fix key buffer size and validation logic 
