@@ -1,13 +1,17 @@
 ### Todo
-- [ ] improve key display and virtual key mapping feature
+- [ ] increase font size and visibility
 - [ ] fix key buffer size and validation logic 
+
+- [ ] improve key display and virtual key mapping feature
+- [ ] add settings menu from tray icon
 
 - [ ] adding padding around bar
 - [ ] clear display after 5 seconds of inactivity
 
+- [ ] improve logging speeds & organization
+
 ### Bugs
 - [ ] feel like program has some memory leaks???
-- [ ] test new keylogger file logging functionality
 
 ### Complete
 - [x] log events to log file
@@ -28,3 +32,4 @@
 - [x] split features into different files to help keep organized
 - [x] fix clean Makefile command not being able to find correct file paths (i hate this shit ;-;)
 - [x] set keylogger log to fixed size to avoid memory capacity issues
+- [x] test new keylogger file logging functionality

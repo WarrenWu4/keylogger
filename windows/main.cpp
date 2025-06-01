@@ -20,7 +20,7 @@ typedef std::pair<int, int> Vector2;
 
 // helper classes
 Logger errorLog(L"error.log");
-FixedSizeLogger keyLog(L"keys.log", 10240, 1024);
+FixedSizeLogger keyLog(L"keys.log", 10240);
 KeyWindow display(
     NULL,
     Vector2(120, 48), // size
@@ -93,7 +93,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 RAWINPUT* raw = (RAWINPUT*)lpb;
                 if (raw->header.dwType == RIM_TYPEKEYBOARD) {
                     if (!(raw->data.keyboard.Flags & RI_KEY_BREAK) && raw->data.keyboard.Message == WM_KEYDOWN) {
-                        keyLog.addRecord(&raw->data.keyboard.VKey);
+                        keyLog.write(L"Key pressed: " + std::to_wstring(raw->data.keyboard.VKey));
                         keyBuffer.push_back(GetKeyNameFromVkey(raw->data.keyboard.VKey));
                         keyNames += GetKeyNameFromVkey(raw->data.keyboard.VKey) + L" ";
                         if (keyBuffer.size() > 60) {

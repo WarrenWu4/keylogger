@@ -40,11 +40,11 @@ std::size_t Logger::GetFileSize() {
 }
 
 void Logger::TruncateStart(std::size_t bytes) {
-    std::ifstream in(filePath, std::ios::binary);
+    std::ifstream in(filePath.c_str(), std::ios::binary);
     in.seekg(bytes);
     std::string remaining((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     in.close();
-    std::ofstream out(filePath, std::ios::binary | std::ios::trunc);
+    std::ofstream out(filePath.c_str(), std::ios::binary | std::ios::trunc);
     out.write(remaining.data(), remaining.size());
     out.close();
 }
