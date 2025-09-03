@@ -2,9 +2,16 @@
 #include <winuser.h>
 
 KeyWindow::KeyWindow(HINSTANCE hInstance) {
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+    int windowWidth = 400;
+    int windowHeight = 40;
+    int windowWidthOffset = screenWidth - windowWidth - 40;
+    int windowHeightOffset = (int)(screenHeight*0.8) - windowHeight;
     hwnd = CreateWindowEx(
         WS_EX_TOPMOST | WS_EX_NOACTIVATE, L"Key Display", L"Keylogger", WS_POPUP,
-        CW_USEDEFAULT, CW_USEDEFAULT, 600, 40,
+        windowWidthOffset, windowHeightOffset, // position
+        windowWidth, windowHeight, // size (width, height)
         NULL, NULL, hInstance, NULL
     );
     GetClientRect(hwnd, &rect);

@@ -47,6 +47,10 @@ void cleanup() {
         delete tray;
         tray = nullptr;
     }
+    if (fontManager) {
+        delete fontManager;
+        fontManager = nullptr;
+    }
 }
 
 std::wstring KeysStringFromStrokes(const std::queue<std::wstring>& keyStrokes) {
@@ -153,7 +157,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 1;
     }
 
-    // message loop
     MSG msg = { };
     while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);

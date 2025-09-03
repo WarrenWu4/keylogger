@@ -10,7 +10,11 @@ FontManager::FontManager(HINSTANCE hInstance, HWND hwnd) {
     HDC hdc = GetDC(hwnd);
     int logPixelsY = GetDeviceCaps(hdc, LOGPIXELSY);
     ReleaseDC(hwnd, hdc);
-    int fontHeight = -MulDiv(10, logPixelsY, 72);
+    int fontHeight = -MulDiv(
+        16, // actual font size
+        logPixelsY, 
+        72
+    );
     hFont = CreateFont(
         fontHeight, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
