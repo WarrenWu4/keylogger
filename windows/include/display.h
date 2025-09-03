@@ -31,8 +31,11 @@ private:
 
     // helper functions
     void ResizeWindow(Vector2 newSize);
+
+    static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 public:
-    KeyWindow(HWND hwnd,
+    KeyWindow(HINSTANCE hInstance,
               Vector2 size,
               Vector2 position,
               Vector2 padding,

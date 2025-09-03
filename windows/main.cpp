@@ -9,6 +9,7 @@
 #include <setupapi.h>
 #include <vector>
 #include <utility>
+#include <queue>
 
 // user created files
 #include "include/vkey.h"
@@ -18,16 +19,10 @@
 typedef std::pair<int, int> Vector2;
 
 // helper classes
+KeyWindow* display = nullptr;
 Logger errorLog(L"error.log");
 FixedSizeLogger keyLog(L"keys.log", 10240);
 FixedSizeLogger debugLog(L"debug.log", 10240);
-KeyWindow display(
-    NULL,
-    Vector2(120, 48), // size
-    Vector2(0, 0), // position
-    Vector2(60, 60), // padding
-    Vector2(10, 10) // margin
-);
 
 #pragma comment(lib, "setupapi.lib")
 
@@ -45,13 +40,37 @@ DEFINE_GUID(GUID_DEVINTERFACE_KEYBOARD,
 
 // keyboard vars
 std::vector<PWSTR> keyboardDevicePaths;
-std::wstring keyNames = L"";
+std::queue<std::wstring> keyStrokes = {};
 
 // window variables (fonts, etc.)
 HFONT hFont = CreateFontW(
     36, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
     DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI"
 );
+
+std::wstring KeysStringFromStrokes(const std::queue<std::wstring>& keyStrokes) {
+    std::wstring result;
+    std::queue<std::wstring> tempQueue = keyStrokes; // copy to avoid modifying original queue
+    while (!tempQueue.empty()) {
+        result += tempQueue.front();
+        tempQueue.pop();
+    }
+    return result;
+}
+
+void DrawKeyStrokes(HDC hdc, int xStart, int yStart) {
+    int x = xStart;
+    std::queue<std::wstring> keyStrokesCopy = keyStrokes; // copy to avoid modifying original queue
+    while (!keyStrokesCopy.empty()) {
+        std::wstring key = keyStrokesCopy.front();
+        keyStrokesCopy.pop();
+        SIZE size;
+        GetTextExtentPoint32W(hdc, key.c_str(), static_cast<int>(key.length()), &size);
+
+        TextOutW(hdc, x, yStart, key.c_str(), static_cast<int>(key.length()));
+        x += size.cx + 10;
+    }
+}
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
@@ -68,11 +87,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             HDC hdc = BeginPaint(hwnd, &ps);
             SetBkColor(hdc, RGB(0, 0, 0));
             SetTextColor(hdc, RGB(255, 255, 255));
-            // SelectObject(hdc, GetStockObject(DEFAULT_GUI_FONT));
             HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
             RECT rect;
             GetClientRect(hwnd, &rect);
-            DrawText(hdc, keyNames.c_str(), -1, &rect, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+            std::wstring keyString = KeysStringFromStrokes(keyStrokes);
+            DrawText(hdc, keyString.c_str(), -1, &rect, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+            // DrawKeyStrokes(hdc, rect.left + 10, rect.top + 10);
             SelectObject(hdc, oldFont);
             DeleteObject(hFont);
             EndPaint(hwnd, &ps);
@@ -88,15 +108,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 if (raw->header.dwType == RIM_TYPEKEYBOARD) {
                     if (!(raw->data.keyboard.Flags & RI_KEY_BREAK) && raw->data.keyboard.Message == WM_KEYDOWN) {
                         keyLog.write(L"Key pressed: " + std::to_wstring(raw->data.keyboard.VKey) + L"\n");
-                        debugLog.write(L"Raw input received: " + GetKeyNameFromVkey(raw->data.keyboard.VKey) + L"\n");
-                        keyNames += GetKeyNameFromVkey(raw->data.keyboard.VKey);
-                        if (keyNames.size() > 60) {
-                            keyNames.erase(0, keyNames.find_first_of(L" ") + 1);
+                        keyStrokes.push(GetKeyNameFromVkey(raw->data.keyboard.VKey));
+                        if (keyStrokes.size() > 10) {
+                            keyStrokes.pop(); // remove oldest key if more than 10 keys
                         }
+                        /*
                         InvalidateRect(hwnd, NULL, TRUE);
                         if (display.GetHWND() != NULL) {
-                            display.WriteText(keyNames.c_str());
+                            display.WriteText(KeysStringFromStrokes(keyStrokes).c_str());
                         }
+                        */
                     }
                 }
             }
@@ -147,7 +168,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             errorLog.LogMessageToFile(L"Window creation failed.");
             return 1;
         }
-        display.UpdateHWND(hwnd);
+        display = new KeyWindow(
+            hInstance,
+            Vector2(120, 48), // size
+            Vector2(0, 0), // position
+            Vector2(60, 60), // padding
+            Vector2(10, 10) // margin
+        );
+        display->UpdateHWND(hwnd);
         ShowWindow(hwnd, SW_SHOW);
         UpdateWindow(hwnd);
         // update and show window
@@ -186,6 +214,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     } catch (const std::exception& e) {
         errorLog.LogMessageToFile(L"Exception occurred: " + std::wstring(e.what(), e.what() + strlen(e.what())));
         return 1;
+    }
+    if (display) {
+        delete display;
+        display = nullptr;
     }
     return 0;
 }
