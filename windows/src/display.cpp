@@ -21,24 +21,22 @@ HWND KeyWindow::getHwnd() {
     return this->hwnd;
 }
 
-void KeyWindow::drawText(HDC hdc) {
+void KeyWindow::drawText(HDC hdc, HFONT hFont) {
     COLORREF bgColor = RGB(0, 0, 0);
     COLORREF textColor = RGB(255, 255, 255);
     HBRUSH hBrush = CreateSolidBrush(bgColor);
-    // SIZE size;
-    // if (!GetTextExtentPoint32W(hdc, text.c_str(), text.length(), &size)) {
-    //     ReleaseDC(hwnd, hdc);
-    //     throw std::runtime_error("Failed to get text extent.");
-    // }
     FillRect(hdc, &rect, hBrush);
     SetTextColor(hdc, textColor);
+    SetBkColor(hdc, TRANSPARENT);
+    HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
     RECT paddingRect = {
         rect.left+padding.x, 
         rect.top+padding.y, 
         rect.right-padding.x, 
         rect.bottom-padding.y
     };
-    DrawText(hdc, this->text.c_str(), -1, &paddingRect, DT_SINGLELINE | DT_VCENTER);
+    DrawTextW(hdc, this->text.c_str(), -1, &paddingRect, DT_SINGLELINE | DT_VCENTER);
+    SelectObject(hdc, oldFont);
     DeleteObject(hBrush);
 }
 

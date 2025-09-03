@@ -9,15 +9,13 @@ FontManager::FontManager(HINSTANCE hInstance, HWND hwnd) {
     hFontRes = AddFontMemResourceEx(pFontData, fontSize, NULL, &nFonts);
     HDC hdc = GetDC(hwnd);
     int logPixelsY = GetDeviceCaps(hdc, LOGPIXELSY);
+    ReleaseDC(hwnd, hdc);
     int fontHeight = -MulDiv(10, logPixelsY, 72);
     hFont = CreateFont(
         fontHeight, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
         DEFAULT_PITCH | FF_MODERN, L"JetBrains Mono"
     );
-    HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
-    ReleaseDC(hwnd, hdc);
-    DeleteObject(oldFont);
 }
 
 FontManager::~FontManager() {

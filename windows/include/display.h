@@ -19,12 +19,12 @@ private:
     HWND hwnd = nullptr;
     RECT rect;
     Point padding = {6, 4};
-    std::wstring text = L"Testing";
+    std::wstring text = L"";
 
 public:
     KeyWindow(HINSTANCE hInstance);
     ~KeyWindow();
     HWND getHwnd();
     void setText(const std::wstring& newText);
-    void drawText(HDC hdc);
+    void drawText(HDC hdc, HFONT hFont);
 };

@@ -82,7 +82,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            display->drawText(hdc); 
+            display->drawText(hdc, fontManager->getFont()); 
             EndPaint(hwnd, &ps);
             break;
         }
@@ -138,9 +138,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     }
 
     display = new KeyWindow(hInstance);
-    ShowWindow(display->getHwnd(), SW_SHOW);
     tray = new SystemTray(hInstance, display->getHwnd());
     fontManager = new FontManager(hInstance, display->getHwnd());
+    ShowWindow(display->getHwnd(), SW_SHOW);
 
     RAWINPUTDEVICE rid[1];
     rid[0].usUsagePage = 0x01; // generic desktop controls
