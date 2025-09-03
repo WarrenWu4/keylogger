@@ -4,17 +4,18 @@
 KeyWindow::KeyWindow(HINSTANCE hInstance) {
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    int windowWidth = 400;
-    int windowHeight = 40;
-    int windowWidthOffset = screenWidth - windowWidth - 40;
-    int windowHeightOffset = (int)(screenHeight*0.8) - windowHeight;
+    windowSize = {400, 40};
+    windowOffset = {
+        screenWidth-windowSize.x-40,
+        (int)(screenHeight*0.8)-windowSize.y
+    };
     hwnd = CreateWindowEx(
         WS_EX_TOPMOST | WS_EX_NOACTIVATE, L"Key Display", L"Keylogger", WS_POPUP,
-        windowWidthOffset, windowHeightOffset, // position
-        windowWidth, windowHeight, // size (width, height)
+        windowOffset.x, windowOffset.y, // position
+        windowSize.x, windowSize.y, // size (width, height)
         NULL, NULL, hInstance, NULL
     );
-    GetClientRect(hwnd, &rect);
+    GetClientRect(hwnd, &rect); // {0, 0, windowSize.x, windowSize.y}
 }
 
 KeyWindow::~KeyWindow() {
@@ -29,22 +30,14 @@ HWND KeyWindow::getHwnd() {
 }
 
 void KeyWindow::drawText(HDC hdc, HFONT hFont) {
+    if (text.empty()) { return; }
     COLORREF bgColor = RGB(0, 0, 0);
     COLORREF textColor = RGB(255, 255, 255);
-    HBRUSH hBrush = CreateSolidBrush(bgColor);
-    FillRect(hdc, &rect, hBrush);
     SetTextColor(hdc, textColor);
-    SetBkColor(hdc, TRANSPARENT);
+    SetBkColor(hdc, bgColor);
     HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
-    RECT paddingRect = {
-        rect.left+padding.x, 
-        rect.top+padding.y, 
-        rect.right-padding.x, 
-        rect.bottom-padding.y
-    };
-    DrawTextW(hdc, this->text.c_str(), -1, &paddingRect, DT_SINGLELINE | DT_VCENTER);
+    DrawTextW(hdc, this->text.c_str(), -1, &rect, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
     SelectObject(hdc, oldFont);
-    DeleteObject(hBrush);
 }
 
 void KeyWindow::setText(std::wstring const& newText) {

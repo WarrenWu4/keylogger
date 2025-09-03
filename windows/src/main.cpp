@@ -11,32 +11,23 @@
 #include <utility>
 #include <queue>
 
-// user created files
 #include "vkey.h"
 #include "display.h"
 #include "logging.h"
 #include "system_tray.h"
 #include "font_manager.h"
 
-typedef std::pair<int, int> Vector2;
-
-// helper classes
 KeyWindow* display = nullptr;
 SystemTray* tray = nullptr;
 FontManager* fontManager = nullptr;
-Logger errorLog(L"error.log");
-FixedSizeLogger keyLog(L"keys.log", 10240);
-FixedSizeLogger debugLog(L"debug.log", 10240);
+Logger* logger = nullptr;
 
-
-// guid for keyboard interfaces
 DEFINE_GUID(GUID_DEVINTERFACE_KEYBOARD,
     0x884b96c3, 0x56ef, 0x11d1,
     0xbc, 0x8c, 0x00, 0xa0, 0xc9, 0x14, 0x05, 0xdd);
 
-// keyboard vars
-std::vector<PWSTR> keyboardDevicePaths;
-std::queue<std::wstring> keyStrokes = {};
+std::wstring textBuffer = L"";
+const int maxTextBuffer = 20;
 
 void cleanup() {
     if (display) {
@@ -51,29 +42,9 @@ void cleanup() {
         delete fontManager;
         fontManager = nullptr;
     }
-}
-
-std::wstring KeysStringFromStrokes(const std::queue<std::wstring>& keyStrokes) {
-    std::wstring result;
-    std::queue<std::wstring> tempQueue = keyStrokes; // copy to avoid modifying original queue
-    while (!tempQueue.empty()) {
-        result += tempQueue.front();
-        tempQueue.pop();
-    }
-    return result;
-}
-
-void DrawKeyStrokes(HDC hdc, int xStart, int yStart) {
-    int x = xStart;
-    std::queue<std::wstring> keyStrokesCopy = keyStrokes; // copy to avoid modifying original queue
-    while (!keyStrokesCopy.empty()) {
-        std::wstring key = keyStrokesCopy.front();
-        keyStrokesCopy.pop();
-        SIZE size;
-        GetTextExtentPoint32W(hdc, key.c_str(), static_cast<int>(key.length()), &size);
-
-        TextOutW(hdc, x, yStart, key.c_str(), static_cast<int>(key.length()));
-        x += size.cx + 10;
+    if (logger) {
+        delete logger;
+        logger = nullptr;
     }
 }
 
@@ -99,11 +70,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 RAWINPUT* raw = (RAWINPUT*)lpb;
                 if (raw->header.dwType == RIM_TYPEKEYBOARD) {
                     if (!(raw->data.keyboard.Flags & RI_KEY_BREAK) && raw->data.keyboard.Message == WM_KEYDOWN) {
-                        keyLog.write(L"Key pressed: " + std::to_wstring(raw->data.keyboard.VKey) + L"\n");
-                        keyStrokes.push(GetKeyNameFromVkey(raw->data.keyboard.VKey));
-                        if (keyStrokes.size() > 10) {
-                            keyStrokes.pop(); // remove oldest key if more than 10 keys
+                        textBuffer += GetKeyNameFromVkey(raw->data.keyboard.VKey);
+                        if (textBuffer.size() > maxTextBuffer) {
+                            textBuffer.erase(0, textBuffer.size() - maxTextBuffer);
                         }
+                        display->setText(textBuffer);
+                        InvalidateRect(display->getHwnd(), NULL, TRUE);
                         PostMessage(display->getHwnd(), WM_PAINT, 0, 0);
                     }
                 }
@@ -131,12 +103,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
+    logger = new Logger("build/debug.log", 102480);
+    logger->write("Logger initialized\n");
+
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = L"Key Display";
     if (!RegisterClass(&wc)) {
-        errorLog.LogMessageToFile(L"Window class registration failed.");
+        MessageBox(NULL, L"Failed to register window class!", L"Error", MB_OK);
         cleanup();
         return 1;
     }

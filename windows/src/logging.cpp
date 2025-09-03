@@ -1,69 +1,48 @@
 #include "logging.h"
 
-Logger::Logger(const std::wstring& filePath, std::size_t maxFileSize) : filePath(filePath), maxFileSize(maxFileSize) {
-    file.open(filePath.c_str(), std::ios::app);
-    if (!file.is_open()) {
-        DWORD errorCode = GetLastError();
-        PrintErrorAndExit(L"Failed to open log file", errorCode);
+Logger::Logger(const std::string& filename, std::size_t maxFileSize) {
+    file.open(filename, std::ios::binary | std::ios::out | std::ios::trunc);
+    file.close();
+    file.open(filename, std::ios::binary | std::ios::in | std::ios::out);
+    if (!file) {
+      throw std::runtime_error("Constructor: cannot open file: data.log");
     }
+    this->filename = filename;
+    this->maxFileSize = maxFileSize;
 }
 
 Logger::~Logger() {
     if (file.is_open()) {
-        file.close();
+      flush();
+      file.close();
     }
 }
 
-void Logger::LogMessageToFile(const std::wstring& message) {
-    if (file.is_open()) {
-        /*
-        std::size_t currentSize = GetFileSize();
-        if (currentSize >= maxFileSize) {
-            file.close();
-            RotateFile();
-        }
-        */
-        file << message << std::endl;
-        file.flush();
+void Logger::write(const std::string& data) {
+    std::size_t dataSize = data.size();
+    // check if buffer is full
+    if ((const int)(buffer.size() + dataSize) > BUFFER_SIZE) {
+      // flush the buffer
+      flush();
     }
+    // add new data to buffer
+    buffer.insert(buffer.end(), data.begin(), data.end());
 }
 
-std::size_t Logger::GetFileSize() {
-    WIN32_FILE_ATTRIBUTE_DATA fileInfo;
-    if (GetFileAttributesExW(filePath.c_str(), GetFileExInfoStandard, &fileInfo)) {
-        LARGE_INTEGER size;
-        size.HighPart = fileInfo.nFileSizeHigh;
-        size.LowPart  = fileInfo.nFileSizeLow;
-        return static_cast<std::size_t>(size.QuadPart);
+void Logger::flush() {
+    // check if exceeds file size
+    int currFileSize = file.tellg();
+    if (buffer.size() + currFileSize > maxFileSize) {
+      // if it does, rewrite old data with new data
+      int bytesToRemove = buffer.size() + currFileSize - maxFileSize;
+      file.seekg(bytesToRemove, std::ios::beg);
+      std::vector<char> remainingData(currFileSize - bytesToRemove);
+      file.read(remainingData.data(), currFileSize - bytesToRemove);
+      file.seekp(0, std::ios::beg);
+      file.write(remainingData.data(), remainingData.size());
+      file.seekp(remainingData.size(), std::ios::beg);
     }
-    return 0;
+    file.write(buffer.data(), buffer.size());
+    file.seekp(0, std::ios::end); // move to the end after writing
+    buffer.clear(); // clear the buffer after writing
 }
-
-void Logger::TruncateStart(std::size_t bytes) {
-    std::ifstream in(filePath.c_str(), std::ios::binary);
-    in.seekg(bytes);
-    std::string remaining((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-    in.close();
-    std::ofstream out(filePath.c_str(), std::ios::binary | std::ios::trunc);
-    out.write(remaining.data(), remaining.size());
-    out.close();
-}
-
-
-void Logger::PrintErrorAndExit(const std::wstring& error, DWORD errorCode) {
-    LPVOID lpMsgBuf;
-    FormatMessageW(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,
-        errorCode,
-        0,
-        (LPWSTR)&lpMsgBuf,
-        0,
-        NULL
-    );
-    std::wcerr << error << L"\n"
-        << L"WinAPI Error (" << errorCode << L"): " << (LPWSTR)lpMsgBuf << std::endl;
-    LocalFree(lpMsgBuf);
-    ExitProcess(errorCode);
-}
-
