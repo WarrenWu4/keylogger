@@ -3,3 +3,4 @@ keys.log
 error.log
 debug.log
 build
+.vscode

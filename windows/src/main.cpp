@@ -77,14 +77,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     switch (uMsg) {
         case WM_DESTROY: {
             PostQuitMessage(0);
-            return 0;
+            break;
         }
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            display->drawText(hdc, KeysStringFromStrokes(keyStrokes)); 
+            display->drawText(hdc); 
             EndPaint(hwnd, &ps);
-            return 0;
+            break;
         }
         case WM_INPUT: {
             UINT dwSize = 0;
@@ -105,7 +105,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 }
             }
             delete[] lpb;
-            return 0;
+            break;
         }
         case WM_TRAYICON: {
             if (lParam == WM_RBUTTONUP) {
@@ -114,13 +114,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 SetForegroundWindow(hwnd); // Required for menu to work right
                 TrackPopupMenu(tray->getHMenu(), TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hwnd, NULL);
             }
-            return 0;
+            break;
         }
         case WM_COMMAND: {
             if (LOWORD(wParam) == ID_TRAY_EXIT) {
                 PostQuitMessage(0);
             }
-            return 0;
+            break;
         }
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -138,7 +138,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     }
 
     display = new KeyWindow(hInstance);
-    tray = new SystemTray(display->getHwnd());
+    ShowWindow(display->getHwnd(), SW_SHOW);
+    tray = new SystemTray(hInstance, display->getHwnd());
     fontManager = new FontManager(hInstance, display->getHwnd());
 
     RAWINPUTDEVICE rid[1];
@@ -148,6 +149,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     rid[0].hwndTarget = display->getHwnd();
     if (!RegisterRawInputDevices(rid, 1, sizeof(rid[0]))) {
         MessageBox(NULL, L"Failed to register raw input devices!", L"Error", MB_OK);
+        cleanup();
         return 1;
     }
 

@@ -8,7 +8,6 @@ KeyWindow::KeyWindow(HINSTANCE hInstance) {
         NULL, NULL, hInstance, NULL
     );
     GetClientRect(hwnd, &rect);
-    ShowWindow(hwnd, SW_SHOW);
 }
 
 KeyWindow::~KeyWindow() {
@@ -22,7 +21,7 @@ HWND KeyWindow::getHwnd() {
     return this->hwnd;
 }
 
-void KeyWindow::drawText(HDC hdc, const std::wstring text) {
+void KeyWindow::drawText(HDC hdc) {
     COLORREF bgColor = RGB(0, 0, 0);
     COLORREF textColor = RGB(255, 255, 255);
     HBRUSH hBrush = CreateSolidBrush(bgColor);
@@ -33,6 +32,16 @@ void KeyWindow::drawText(HDC hdc, const std::wstring text) {
     // }
     FillRect(hdc, &rect, hBrush);
     SetTextColor(hdc, textColor);
-    DrawText(hdc, text.c_str(), -1, &rect, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+    RECT paddingRect = {
+        rect.left+padding.x, 
+        rect.top+padding.y, 
+        rect.right-padding.x, 
+        rect.bottom-padding.y
+    };
+    DrawText(hdc, this->text.c_str(), -1, &paddingRect, DT_SINGLELINE | DT_VCENTER);
     DeleteObject(hBrush);
+}
+
+void KeyWindow::setText(std::wstring const& newText) {
+    this->text = newText;
 }

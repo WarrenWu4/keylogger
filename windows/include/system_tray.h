@@ -12,7 +12,7 @@ class SystemTray {
         HICON hIcon = nullptr;
         HMENU hMenu = nullptr;
     public:
-        SystemTray(HWND hwnd);
+        SystemTray(HINSTANCE hInstance, HWND hwnd);
         ~SystemTray();
         HMENU getHMenu();
 };

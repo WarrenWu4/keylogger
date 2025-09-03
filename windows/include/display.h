@@ -6,23 +6,25 @@
 #include <deque>
 #include <stdexcept>
 
-typedef std::pair<int, int> Vector2;
-
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
 
+struct Point {
+    int x;
+    int y;
+};
+
 class KeyWindow {
 private:
-    HWND hwnd;
+    HWND hwnd = nullptr;
     RECT rect;
-    Vector2 size;
-    Vector2 position;
-    Vector2 padding;
-    Vector2 margin;
+    Point padding = {6, 4};
+    std::wstring text = L"Testing";
 
 public:
     KeyWindow(HINSTANCE hInstance);
     ~KeyWindow();
     HWND getHwnd();
-    void drawText(HDC hdc, const std::wstring text);
+    void setText(const std::wstring& newText);
+    void drawText(HDC hdc);
 };
