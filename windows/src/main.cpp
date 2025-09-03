@@ -12,18 +12,18 @@
 #include <queue>
 
 // user created files
-#include "include/vkey.h"
-#include "include/display.h"
-#include "include/logging.h"
-#include "include/system_tray.h"
+#include "vkey.h"
+#include "display.h"
+#include "logging.h"
+#include "system_tray.h"
+#include "font_manager.h"
 
 typedef std::pair<int, int> Vector2;
-
-#pragma comment(lib, "setupapi.lib")
 
 // helper classes
 KeyWindow* display = nullptr;
 SystemTray* tray = nullptr;
+FontManager* fontManager = nullptr;
 Logger errorLog(L"error.log");
 FixedSizeLogger keyLog(L"keys.log", 10240);
 FixedSizeLogger debugLog(L"debug.log", 10240);
@@ -37,12 +37,6 @@ DEFINE_GUID(GUID_DEVINTERFACE_KEYBOARD,
 // keyboard vars
 std::vector<PWSTR> keyboardDevicePaths;
 std::queue<std::wstring> keyStrokes = {};
-
-// window variables (fonts, etc.)
-HFONT hFont = CreateFontW(
-    36, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-    DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI"
-);
 
 void cleanup() {
     if (display) {
@@ -88,16 +82,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            SetBkColor(hdc, RGB(0, 0, 0));
-            SetTextColor(hdc, RGB(255, 255, 255));
-            HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
-            RECT rect;
-            GetClientRect(hwnd, &rect);
-            std::wstring keyString = KeysStringFromStrokes(keyStrokes);
-            DrawText(hdc, keyString.c_str(), -1, &rect, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
-            // DrawKeyStrokes(hdc, rect.left + 10, rect.top + 10);
-            SelectObject(hdc, oldFont);
-            DeleteObject(hFont);
+            display->drawText(hdc, KeysStringFromStrokes(keyStrokes)); 
             EndPaint(hwnd, &ps);
             return 0;
         }
@@ -115,12 +100,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                         if (keyStrokes.size() > 10) {
                             keyStrokes.pop(); // remove oldest key if more than 10 keys
                         }
-                        /*
-                        InvalidateRect(hwnd, NULL, TRUE);
-                        if (display.GetHWND() != NULL) {
-                            display.WriteText(KeysStringFromStrokes(keyStrokes).c_str());
-                        }
-                        */
+                        PostMessage(display->getHwnd(), WM_PAINT, 0, 0);
                     }
                 }
             }
@@ -157,24 +137,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 1;
     }
 
-    display = new KeyWindow(
-        hInstance,
-        Vector2(120, 48), // size
-        Vector2(0, 0), // position
-        Vector2(60, 60), // padding
-        Vector2(10, 10) // margin
-    );
-    ShowWindow(display->GetHWND(), SW_SHOW);
-    UpdateWindow(display->GetHWND());
-    tray = new SystemTray(display->GetHWND());
+    display = new KeyWindow(hInstance);
+    tray = new SystemTray(display->getHwnd());
+    fontManager = new FontManager(hInstance, display->getHwnd());
 
-    // update and show window
-    // register raw input from keyboards
     RAWINPUTDEVICE rid[1];
     rid[0].usUsagePage = 0x01; // generic desktop controls
     rid[0].usUsage = 0x06; // keyboard
     rid[0].dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY; // receive input even when not in foreground
-    rid[0].hwndTarget = display->GetHWND();
+    rid[0].hwndTarget = display->getHwnd();
     if (!RegisterRawInputDevices(rid, 1, sizeof(rid[0]))) {
         MessageBox(NULL, L"Failed to register raw input devices!", L"Error", MB_OK);
         return 1;

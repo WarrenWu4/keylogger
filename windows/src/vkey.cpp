@@ -1,4 +1,4 @@
-#include "../include/vkey.h"
+#include "vkey.h"
 
 const std::unordered_map<DWORD,std::wstring> vkeyToWString = {
     // number keys and the keypad equivalent 

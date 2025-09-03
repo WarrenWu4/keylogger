@@ -13,38 +13,16 @@ typedef std::pair<int, int> Vector2;
 
 class KeyWindow {
 private:
-    // window properties
     HWND hwnd;
+    RECT rect;
     Vector2 size;
     Vector2 position;
     Vector2 padding;
     Vector2 margin;
 
-    // additional helpful properties
-    RECT desktopRect;
-
-    // font information
-    HFONT hFont = CreateFontW(
-        28, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-        DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI"
-    );
-
-    // helper functions
-    void ResizeWindow(Vector2 newSize);
-
-    static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
 public:
-    KeyWindow(HINSTANCE hInstance,
-              Vector2 size,
-              Vector2 position,
-              Vector2 padding,
-              Vector2 margin
-              );
-
-    HWND GetHWND();
-
-    void UpdateHWND(HWND hwnd);
-
-    void WriteText(const std::wstring text);
+    KeyWindow(HINSTANCE hInstance);
+    ~KeyWindow();
+    HWND getHwnd();
+    void drawText(HDC hdc, const std::wstring text);
 };

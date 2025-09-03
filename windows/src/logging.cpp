@@ -1,4 +1,4 @@
-#include "../include/logging.h"
+#include "logging.h"
 
 Logger::Logger(const std::wstring& filePath, std::size_t maxFileSize) : filePath(filePath), maxFileSize(maxFileSize) {
     file.open(filePath.c_str(), std::ios::app);

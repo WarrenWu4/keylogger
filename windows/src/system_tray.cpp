@@ -1,4 +1,4 @@
-#include "../include/system_tray.h"
+#include "system_tray.h"
 
 SystemTray::SystemTray(HWND hwnd) {
     // notify icon data struct
