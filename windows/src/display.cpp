@@ -10,7 +10,10 @@ KeyWindow::KeyWindow(HINSTANCE hInstance) {
         (int)(screenHeight*0.8)-windowSize.y
     };
     hwnd = CreateWindowEx(
-        WS_EX_TOPMOST | WS_EX_NOACTIVATE, L"Key Display", L"Keylogger", WS_POPUP,
+        WS_EX_TOPMOST | WS_EX_NOACTIVATE | WS_EX_LAYERED, 
+        L"Key Display", 
+        L"Keylogger", 
+        WS_POPUP,
         windowOffset.x, windowOffset.y, // position
         windowSize.x, windowSize.y, // size (width, height)
         NULL, NULL, hInstance, NULL
@@ -31,13 +34,15 @@ HWND KeyWindow::getHwnd() {
 
 void KeyWindow::drawText(HDC hdc, HFONT hFont) {
     if (text.empty()) { return; }
+    COLORREF rectColor = RGB(255, 0, 0);
     COLORREF bgColor = RGB(0, 0, 0);
     COLORREF textColor = RGB(255, 255, 255);
     SetTextColor(hdc, textColor);
     SetBkColor(hdc, bgColor);
     HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
-    HBRUSH brush = CreateSolidBrush(bgColor);
+    HBRUSH brush = CreateSolidBrush(rectColor);
     FillRect(hdc, &rect, brush);
+    SetLayeredWindowAttributes(hwnd, rectColor, (BYTE)(255*transparency), LWA_COLORKEY | LWA_ALPHA);
     DrawTextW(hdc, this->text.c_str(), -1, &rect, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
     SelectObject(hdc, oldFont);
     DeleteObject(brush);

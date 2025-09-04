@@ -25,6 +25,7 @@ private:
 
     Point windowSize = {0, 0};
     Point windowOffset = {0, 0};
+    const double transparency = 0.2;
 
 public:
     KeyWindow(HINSTANCE hInstance);
