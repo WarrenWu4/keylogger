@@ -80,6 +80,16 @@ LRESULT CALLBACK SettingsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
                 WS_CHILD | WS_VISIBLE | ES_NUMBER,
                 16, 48, 100, 25,
                 hwnd, (HMENU)IDC_EDIT, GetModuleHandle(NULL), NULL);
+            CreateWindowEx(
+                WS_EX_CLIENTEDGE, L"EDIT", L"20",
+                WS_CHILD | WS_VISIBLE | ES_NUMBER,
+                16, 98, 100, 25,
+                hwnd, (HMENU)IDC_EDIT, GetModuleHandle(NULL), NULL);
+            CreateWindowEx(
+                WS_EX_CLIENTEDGE, L"EDIT", L"1.0",
+                WS_CHILD | WS_VISIBLE | ES_NUMBER,
+                16, 148, 100, 25,
+                hwnd, (HMENU)IDC_EDIT, GetModuleHandle(NULL), NULL);
             break;
         }
         case WM_PAINT: {
@@ -116,20 +126,20 @@ void SettingsWindow::DrawWindow(HDC hdc) {
     };
     std::wstring text = L"Font Size (8 - 40)";
     DrawTextW(hdc, text.c_str(), -1, &paddingRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-    // std::wstring text2 = L"Text Display Length (5 - 40)";
-    // RECT text2Rect = {
-    //     padding.first,
-    //     padding.second + 50,
-    //     paddingRect.right,
-    //     paddingRect.bottom + 50};
-    // DrawTextW(hdc, text2.c_str(), -1, &text2Rect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-    // RECT text3Rect = {
-    //     padding.first,
-    //     padding.second + 100,
-    //     paddingRect.right,
-    //     paddingRect.bottom + 100};
-    // std::wstring text3 = L"Transparency (0.1 - 1.0)";
-    // DrawTextW(hdc, text3.c_str(), -1, &text3Rect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    std::wstring text2 = L"Text Display Length (5 - 40)";
+    RECT text2Rect = {
+        padding.first,
+        padding.second + 50,
+        paddingRect.right,
+        paddingRect.bottom + 50};
+    DrawTextW(hdc, text2.c_str(), -1, &text2Rect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    RECT text3Rect = {
+        padding.first,
+        padding.second + 100,
+        paddingRect.right,
+        paddingRect.bottom + 100};
+    std::wstring text3 = L"Transparency (0.1 - 1.0)";
+    DrawTextW(hdc, text3.c_str(), -1, &text3Rect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 }
 
 HWND SettingsWindow::GetHwnd() {
