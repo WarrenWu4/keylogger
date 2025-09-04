@@ -120,6 +120,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = L"Key Display";
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     if (!RegisterClass(&wc)) {
         MessageBox(NULL, L"Failed to register window class!", L"Error", MB_OK);
         cleanup();
