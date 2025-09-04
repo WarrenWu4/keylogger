@@ -17,6 +17,8 @@
 #include "system_tray.h"
 #include "font_manager.h"
 
+#define IDT_INACTIVE_TIMER 1
+
 KeyWindow* display = nullptr;
 SystemTray* tray = nullptr;
 FontManager* fontManager = nullptr;
@@ -32,6 +34,7 @@ void cleanup() {
         hKeyboardHook = nullptr;
     }
     if (display) {
+        KillTimer(display->getHwnd(), IDT_INACTIVE_TIMER);
         delete display;
         display = nullptr;
     }
@@ -63,8 +66,11 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
                 textBuffer.erase(0, textBuffer.size() - maxTextBuffer);
             }
             display->setText(textBuffer);
+            ShowWindow(display->getHwnd(), SW_SHOW);
             InvalidateRect(display->getHwnd(), NULL, TRUE);
             PostMessage(display->getHwnd(), WM_PAINT, 0, 0);
+            KillTimer(display->getHwnd(), IDT_INACTIVE_TIMER);
+            SetTimer(display->getHwnd(), IDT_INACTIVE_TIMER, 5000, NULL);
         }
     }
     return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
@@ -72,6 +78,15 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
+        case WM_TIMER: {
+            if (wParam == IDT_INACTIVE_TIMER) {
+                textBuffer = L"";
+                display->setText(textBuffer);
+                ShowWindow(display->getHwnd(), SW_HIDE);
+                KillTimer(display->getHwnd(), IDT_INACTIVE_TIMER);
+            }
+            break;
+        }
         case WM_LBUTTONDOWN: {
             POINT cursorPos;
             GetCursorPos(&cursorPos);
@@ -83,6 +98,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             break;
         }
         case WM_DESTROY: {
+            cleanup();
             PostQuitMessage(0);
             break;
         }
@@ -104,6 +120,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         }
         case WM_COMMAND: {
             if (LOWORD(wParam) == ID_TRAY_EXIT) {
+                cleanup();
                 PostQuitMessage(0);
             }
             break;
