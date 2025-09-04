@@ -3,8 +3,8 @@
 const std::unordered_map<UINT, std::wstring> specialKeys = {
     {VK_SHIFT, L"\u21E7"},
     {VK_CONTROL, L"\u2303"},
-    {VK_MENU, L"\u2318"},
-    {VK_LWIN, L"\u2318"},
+    {VK_MENU, L"\u2756"},
+    {VK_LWIN, L"\u2756"},
     {VK_RWIN, L"\u2318"},
     {VK_ESCAPE, L"ESC"},
     {VK_INSERT, L"\u2396"},
@@ -12,7 +12,14 @@ const std::unordered_map<UINT, std::wstring> specialKeys = {
     {VK_END, L"\u2305"},
     {VK_RETURN, L"\u23CE"},
     {VK_BACK, L"\u232B"},
-    {VK_TAB, L"[TAB]"},
+    {VK_TAB, L"TAB"},
+    {VK_SPACE, L"\u2423"},
+    {VK_CAPITAL, L"\u21EA"},
+    {VK_LEFT, L"\u2190"},
+    {VK_UP, L"\u238B"},
+    {VK_RIGHT, L"\u2192"},
+    {VK_DOWN, L"\u2193"},
+    {VK_DELETE, L"DEL"},
 };
 
 std::wstring getStrFromVKey(UINT vKey, UINT scanCode, BYTE keyboardState[256]) {
