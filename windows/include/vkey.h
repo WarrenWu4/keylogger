@@ -4,6 +4,5 @@
 #include <string>
 #include <unordered_map>
 
-std::wstring GetKeyNameFromVkey(DWORD vkey);
-extern const std::unordered_map<DWORD,std::wstring> vkeyToWString;
-
+extern const std::unordered_map<UINT, std::wstring> specialKeys;
+std::wstring getStrFromVKey(UINT vKey, UINT scanCode, BYTE keyboardState[256]);
