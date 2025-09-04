@@ -14,6 +14,7 @@ SystemTray::SystemTray(HINSTANCE hInstance, HWND hwnd) {
     Shell_NotifyIcon(NIM_ADD, &nid);
     // system tray menu
     hMenu = CreatePopupMenu();
+    AppendMenu(hMenu, MF_STRING, ID_TRAY_SETTINGS, L"Settings");
     AppendMenu(hMenu, MF_STRING, ID_TRAY_EXIT, L"Exit");
 }
 

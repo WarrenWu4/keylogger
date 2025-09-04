@@ -34,5 +34,4 @@ public:
     RECT* getRect();
     void setText(const std::wstring& newText);
     void drawText(HDC hdc, HFONT hFont);
-    Logger logger = Logger("build/display.log", 102480);
 };

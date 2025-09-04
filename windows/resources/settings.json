@@ -1,0 +1,12 @@
+{
+    "fontSize": 16,
+    "textBufferLength": 20,
+    "inactiveTimeout": -1,
+    "transparency": 1,
+    "textColor": "RGB(255, 255, 255)",
+    "backgroundColor": "RGB(0, 0, 0)",
+    "windowPosition": {
+        "x": 0,
+        "y": 0
+    }
+}

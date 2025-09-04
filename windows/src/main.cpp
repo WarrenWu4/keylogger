@@ -16,12 +16,14 @@
 #include "logging.h"
 #include "system_tray.h"
 #include "font_manager.h"
+#include "settings_window.h"
 
 #define IDT_INACTIVE_TIMER 1
 
 KeyWindow* display = nullptr;
 SystemTray* tray = nullptr;
 FontManager* fontManager = nullptr;
+SettingsWindow* settingsWindow = nullptr;
 Logger* logger = nullptr;
 
 HHOOK hKeyboardHook = nullptr;
@@ -49,6 +51,10 @@ void cleanup() {
     if (logger) {
         delete logger;
         logger = nullptr;
+    }
+    if (settingsWindow) {
+        delete settingsWindow;
+        settingsWindow = nullptr;
     }
 }
 
@@ -98,7 +104,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             break;
         }
         case WM_DESTROY: {
-            cleanup();
             PostQuitMessage(0);
             break;
         }
@@ -110,7 +115,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             break;
         }
         case WM_TRAYICON: {
-            if (lParam == WM_RBUTTONUP) {
+            if (lParam == WM_RBUTTONUP || lParam == WM_LBUTTONDOWN) {
                 POINT pt;
                 GetCursorPos(&pt);
                 SetForegroundWindow(hwnd); // Required for menu to work right
@@ -120,10 +125,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         }
         case WM_COMMAND: {
             if (LOWORD(wParam) == ID_TRAY_EXIT) {
-                cleanup();
                 PostQuitMessage(0);
+                break;
+            } else if (LOWORD(wParam) == ID_TRAY_SETTINGS) {
+                ShowWindow(settingsWindow->GetHwnd(), SW_SHOW);
+                break;
             }
-            break;
         }
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -132,6 +139,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
     logger = new Logger("build/debug.log", 102480);
     logger->write("Logger initialized\n");
+    logger->flush();
 
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;
@@ -154,6 +162,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     display = new KeyWindow(hInstance);
     tray = new SystemTray(hInstance, display->getHwnd());
     fontManager = new FontManager(hInstance, display->getHwnd());
+    settingsWindow = new SettingsWindow(hInstance);
     ShowWindow(display->getHwnd(), SW_SHOW);
 
     MSG msg = { };
