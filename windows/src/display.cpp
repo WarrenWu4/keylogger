@@ -4,7 +4,7 @@
 KeyWindow::KeyWindow(HINSTANCE hInstance) {
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    windowSize = {400, 40};
+    windowSize = {450, 40};
     windowOffset = {
         screenWidth-windowSize.x-40,
         (int)(screenHeight*0.8)-windowSize.y
@@ -36,9 +36,13 @@ void KeyWindow::drawText(HDC hdc, HFONT hFont) {
     SetTextColor(hdc, textColor);
     SetBkColor(hdc, bgColor);
     HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
+    HBRUSH brush = CreateSolidBrush(bgColor);
+    FillRect(hdc, &rect, brush);
     DrawTextW(hdc, this->text.c_str(), -1, &rect, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
     SelectObject(hdc, oldFont);
+    DeleteObject(brush);
 }
+
 
 void KeyWindow::setText(std::wstring const& newText) {
     this->text = newText;
