@@ -22,14 +22,15 @@ SystemTray* tray = nullptr;
 FontManager* fontManager = nullptr;
 Logger* logger = nullptr;
 
-DEFINE_GUID(GUID_DEVINTERFACE_KEYBOARD,
-    0x884b96c3, 0x56ef, 0x11d1,
-    0xbc, 0x8c, 0x00, 0xa0, 0xc9, 0x14, 0x05, 0xdd);
-
+HHOOK hKeyboardHook = nullptr;
 std::wstring textBuffer = L"";
 const int maxTextBuffer = 20;
 
 void cleanup() {
+    if (hKeyboardHook) {
+        UnhookWindowsHookEx(hKeyboardHook);
+        hKeyboardHook = nullptr;
+    }
     if (display) {
         delete display;
         display = nullptr;
@@ -48,6 +49,27 @@ void cleanup() {
     }
 }
 
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+    if (nCode >= 0) {
+        KBDLLHOOKSTRUCT *pKeyStruct = (KBDLLHOOKSTRUCT *)lParam;
+        if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
+            UINT vKey = pKeyStruct->vkCode;
+            UINT scanCode = pKeyStruct->scanCode;
+            BYTE keyboardState[256] = {0};
+            keyboardState[VK_SHIFT] = (GetAsyncKeyState(VK_SHIFT) & 0x8000) ? 0x80 : 0;
+            textBuffer += getStrFromVKey(vKey, scanCode, keyboardState); 
+            if (textBuffer.size() > maxTextBuffer)
+            {
+                textBuffer.erase(0, textBuffer.size() - maxTextBuffer);
+            }
+            display->setText(textBuffer);
+            InvalidateRect(display->getHwnd(), NULL, TRUE);
+            PostMessage(display->getHwnd(), WM_PAINT, 0, 0);
+        }
+    }
+    return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_DESTROY: {
@@ -59,28 +81,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             HDC hdc = BeginPaint(hwnd, &ps);
             display->drawText(hdc, fontManager->getFont()); 
             EndPaint(hwnd, &ps);
-            break;
-        }
-        case WM_INPUT: {
-            UINT dwSize = 0;
-            GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
-            LPBYTE lpb = new BYTE[dwSize];
-            if (!lpb) { return 0; }
-            if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) == dwSize) {
-                RAWINPUT* raw = (RAWINPUT*)lpb;
-                if (raw->header.dwType == RIM_TYPEKEYBOARD) {
-                    if (!(raw->data.keyboard.Flags & RI_KEY_BREAK) && raw->data.keyboard.Message == WM_KEYDOWN) {
-                        textBuffer += GetKeyNameFromVkey(raw->data.keyboard.VKey);
-                        if (textBuffer.size() > maxTextBuffer) {
-                            textBuffer.erase(0, textBuffer.size() - maxTextBuffer);
-                        }
-                        display->setText(textBuffer);
-                        InvalidateRect(display->getHwnd(), NULL, TRUE);
-                        PostMessage(display->getHwnd(), WM_PAINT, 0, 0);
-                    }
-                }
-            }
-            delete[] lpb;
             break;
         }
         case WM_TRAYICON: {
@@ -116,21 +116,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 1;
     }
 
+    hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, GetModuleHandle(NULL), 0);
+    if (!hKeyboardHook) {
+        MessageBox(NULL, L"Failed to set keyboard hook!", L"Error", MB_OK);
+        cleanup();
+        return 1;
+    }
+
     display = new KeyWindow(hInstance);
     tray = new SystemTray(hInstance, display->getHwnd());
     fontManager = new FontManager(hInstance, display->getHwnd());
     ShowWindow(display->getHwnd(), SW_SHOW);
-
-    RAWINPUTDEVICE rid[1];
-    rid[0].usUsagePage = 0x01; // generic desktop controls
-    rid[0].usUsage = 0x06; // keyboard
-    rid[0].dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY; // receive input even when not in foreground
-    rid[0].hwndTarget = display->getHwnd();
-    if (!RegisterRawInputDevices(rid, 1, sizeof(rid[0]))) {
-        MessageBox(NULL, L"Failed to register raw input devices!", L"Error", MB_OK);
-        cleanup();
-        return 1;
-    }
 
     MSG msg = { };
     while (GetMessage(&msg, NULL, 0, 0)) {
