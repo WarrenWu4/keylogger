@@ -47,3 +47,7 @@ void KeyWindow::drawText(HDC hdc, HFONT hFont) {
 void KeyWindow::setText(std::wstring const& newText) {
     this->text = newText;
 }
+
+RECT* KeyWindow::getRect() {
+    return static_cast<RECT*>(&rect);
+}

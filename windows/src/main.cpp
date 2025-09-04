@@ -72,6 +72,16 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
+        case WM_LBUTTONDOWN: {
+            POINT cursorPos;
+            GetCursorPos(&cursorPos);
+            ScreenToClient(display->getHwnd(), &cursorPos);
+            if (PtInRect(display->getRect(), cursorPos)) {
+                ReleaseCapture();
+                SendMessage(display->getHwnd(), WM_NCLBUTTONDOWN, HTCAPTION, 0);
+            }
+            break;
+        }
         case WM_DESTROY: {
             PostQuitMessage(0);
             break;
