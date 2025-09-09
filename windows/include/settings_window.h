@@ -32,7 +32,7 @@ private:
     void LoadSettings(const std::wstring& path);
     void SaveSettings();
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    Logger logger = Logger("build/settings.log", 102480);
+    // Logger logger = Logger("build/settings.log", 102480);
 public:
     SettingsWindow(HINSTANCE hInstance);
     ~SettingsWindow();

@@ -12,8 +12,8 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance) {
     wc.lpszClassName = L"Settings Class";
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     if (!RegisterClass(&wc)) {
-        logger.write("Failed to register settings window class!\n");
-        logger.flush();
+        // logger.write("Failed to register settings window class!\n");
+        // logger.flush();
         MessageBox(NULL, L"Failed to register settings window class!", L"Error", MB_OK);
         return;
     }
@@ -32,13 +32,13 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance) {
         this
     );
     if (!hwnd) {
-        logger.write("Failed to create settings window!\n");
-        logger.flush();
+        // logger.write("Failed to create settings window!\n");
+        // logger.flush();
         MessageBox(NULL, L"Failed to create settings window!", L"Error", MB_OK);
         return;
     }
-    logger.write("Successfully created settings window\n");
-    logger.flush();
+    // logger.write("Successfully created settings window\n");
+    // logger.flush();
 }
 
 SettingsWindow::~SettingsWindow() {
