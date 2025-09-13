@@ -1,6 +1,6 @@
 #include "settings_window.h"
 
-SettingsWindow::SettingsWindow(HINSTANCE hInstance) {
+SettingsWindow::SettingsWindow(HINSTANCE hInstance, HFONT font) {
     INITCOMMONCONTROLSEX icex;
     icex.dwSize = sizeof(icex);
     icex.dwICC = ICC_UPDOWN_CLASS;
@@ -34,7 +34,8 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance) {
         return;
     }
 
-    ui = KeyloggerUI(windowSize.first, windowSize.second);
+    this->font = font;
+    ui = KeyloggerUI(windowSize.first, windowSize.second, font);
 }
 
 SettingsWindow::~SettingsWindow() {

@@ -152,7 +152,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     display = new KeyWindow(hInstance);
     tray = new SystemTray(hInstance, display->getHwnd());
     fontManager = new FontManager(hInstance, display->getHwnd());
-    settingsWindow = new SettingsWindow(hInstance);
+    settingsWindow = new SettingsWindow(hInstance, fontManager->getFont());
     ShowWindow(display->getHwnd(), SW_SHOW);
 
     MSG msg = { };

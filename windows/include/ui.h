@@ -1,11 +1,12 @@
 // custom ui library for keylogger
-// ! use absolute coordinates relative to the window client to avoid headaches
 #pragma once
 
 #include <windows.h>
 #include <vector>
 #include <memory>
 #include <iostream>
+#include "font_manager.h"
+
 
 enum FlexDirection {
     HORIZONTAL,
@@ -14,9 +15,9 @@ enum FlexDirection {
 
 class Element {
 public:
-    int x, y, width, height;
-    std::vector<std::unique_ptr<Element>> children;
-    Element(int x = 0, int y = 0, int width = 0, int height = 0) : x(x), y(y), width(width), height(height) {}
+    RECT rect = {0, 0, 0, 0};
+    std::vector<std::shared_ptr<Element>> children;
+    Element(RECT rect): rect(rect) {}
     virtual void draw(HDC hdc) {
         for (size_t i = 0; i < children.size(); i++) {
             children[i]->draw(hdc);
@@ -24,36 +25,37 @@ public:
     }
 };
 
+class PaddingContainer : public Element {
+public:
+    int paddingX, paddingY;
+    PaddingContainer(RECT rect, int paddingX, int paddingY) : Element(rect), paddingX(paddingX), paddingY(paddingY) {
+        this->rect.left += paddingX;
+        this->rect.top += paddingY;
+        this->rect.right -= paddingX*2;
+        this->rect.bottom -= paddingY*2;
+    }
+};
+
 class FlexContainer : public Element {
 public:
     FlexDirection direction;
     int gapX, gapY;
-    FlexContainer(int x = 0, int y = 0, int width = 0, int height = 0, FlexDirection direction = HORIZONTAL, int gapX = 0, int gapY = 0) : Element(x, y, width, height), direction(direction), gapX(gapX), gapY(gapY) {}
+    FlexContainer(RECT rect, FlexDirection direction, int gapX, int gapY) : Element(rect), direction(direction), gapX(gapX), gapY(gapY) {}
     void draw(HDC hdc) override {
-        int currentX = x;
-        int currentY = y;
         for (size_t i = 0; i < children.size(); i++) {
-            children[i]->x = currentX;
-            children[i]->y = currentY;
-            children[i]->draw(hdc);
-            if (direction == HORIZONTAL) {
-                currentX += children[i]->width + gapX;
-            } else {
-                MessageBox(NULL, (std::to_wstring(children[i]->height) + L" " + std::to_wstring(currentY)).c_str(), L"Height", MB_OK);
-                currentY += children[i]->height + gapY;
+            if (i > 0 &&  direction == HORIZONTAL) {
+                int childWidth = children[i]->rect.right - children[i]->rect.left;
+                children[i]->rect.left = children[i-1]->rect.right + gapX;
+                children[i]->rect.right = children[i]->rect.left + childWidth;
+            } else if (i > 0 && direction == VERTICAL) {
+                int childHeight = children[i]->rect.bottom - children[i]->rect.top;
+                children[i]->rect.top = children[i-1]->rect.bottom + gapY;
+                children[i]->rect.bottom = children[i]->rect.top + childHeight;
             }
+            // MessageBox(NULL, std::to_wstring(children[i]->rect.top).c_str(), L"Debug", MB_OK);
+            // MessageBox(NULL, std::to_wstring(children[i]->rect.bottom).c_str(), L"Debug", MB_OK);
+            children[i]->draw(hdc);
         }
-    }
-};
-
-class PaddingContainer : public Element {
-public: 
-    int px, py;
-    PaddingContainer(int x = 0, int y = 0, int width = 0, int height = 0, int px = 0, int py = 0) : Element(x, y, width, height), px(px), py(py) {
-        this->x += px;
-        this->y += py;
-        this->width -= 2 * px;
-        this->height -= 2 * py;
     }
 };
 
@@ -61,69 +63,91 @@ class Box : public Element {
 public:
     COLORREF color;
     int borderRadius;
-    Box(int x = 0, int y = 0, int width = 0, int height = 0, COLORREF color = RGB(255, 255, 255), int borderRadius = 0) : Element(x, y, width, height), color(color), borderRadius(borderRadius) {}
+    Box(RECT rect, COLORREF color = RGB(0, 0, 0), int borderRadius = 0) : Element(rect), color(color), borderRadius(borderRadius) {}
     void draw(HDC hdc) override {
         HBRUSH brush = CreateSolidBrush(color);
-        RECT rect = {x, y, width, height};
-        FillRect(hdc, &rect, brush);
+        HPEN pen = CreatePen(PS_NULL, 0, TRANSPARENT);
+        HGDIOBJ oldBrush = SelectObject(hdc, brush);
+        HGDIOBJ oldPen = SelectObject(hdc, pen);
+        RoundRect(hdc, rect.left, rect.top, rect.right, rect.bottom, borderRadius, borderRadius);
+        SelectObject(hdc, oldBrush);
+        SelectObject(hdc, oldPen);
         DeleteObject(brush);
+        DeleteObject(pen);
     }
 };
 
-// ! font set by font manager
 class Text : public Element {
 public:
-    int fontSize;
     std::wstring text;
+    int fontSize;
     COLORREF textColor;
     COLORREF bgColor;
-    Text(int x = 0, int y = 0, int width = 0, int height = 0, std::wstring text = L"", int fontSize = 12, COLORREF textColor = RGB(0, 0, 0), COLORREF bgColor = TRANSPARENT) 
-        : Element(x, y, width, height), text(text), fontSize(fontSize), textColor(textColor), bgColor(bgColor) {}
+    HFONT font;
+    Text(RECT rect, const std::wstring& text, int fontSize, COLORREF textColor, COLORREF bgColor, HFONT font) : Element(rect), text(text), fontSize(fontSize), textColor(textColor), bgColor(bgColor), font(font) {}
+    ~Text() {
+        if (font) {
+            DeleteObject(font);
+            font = nullptr;
+        }
+    }
     void draw(HDC hdc) override {
         SetBkMode(hdc, bgColor);
         SetTextColor(hdc, textColor);
-        RECT rect = {x, y, width, y+height};
+        HFONT oldFont = (HFONT)SelectObject(hdc, font);
         DrawTextW(hdc, text.c_str(), -1, &rect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+        SelectObject(hdc, oldFont);
     }
 };
 
-class Slider : public Element {
-public:
-    int value;
-    Slider(int x = 0, int y = 0, int width = 0, int height = 0, int value = 0) : Element(x, y, width, height), value(value) {}
-    void draw(HDC hdc) override {
-        HBRUSH trackBrush = CreateSolidBrush(RGB(200, 200, 200));
-        RECT trackRect = {x, y+(height-height/4)/2 , x + width, y + height / 4};
-        FillRect(hdc, &trackRect, trackBrush);
-        DeleteObject(trackBrush);
+// class Slider : public Element {
+// public:
+//     int value;
+//     Slider(int x = 0, int y = 0, int width = 0, int height = 0, int value = 0) : Element(x, y, width, height), value(value) {}
+//     void draw(HDC hdc) override {
+//         HBRUSH trackBrush = CreateSolidBrush(RGB(200, 200, 200));
+//         RECT trackRect = {x, y+(height-height/4)/2 , x + width, y + height / 4};
+//         FillRect(hdc, &trackRect, trackBrush);
+//         DeleteObject(trackBrush);
 
-        HBRUSH thumbBrush = CreateSolidBrush(RGB(0, 0, 0));
-        HGDIOBJ oldBrush = (HGDIOBJ)SelectObject(hdc, thumbBrush);
-        Ellipse(hdc, x, y, x+height, y+height);
-        SelectObject(hdc, oldBrush);
-        DeleteObject(thumbBrush);
-    }
-};
+//         HBRUSH thumbBrush = CreateSolidBrush(RGB(0, 0, 0));
+//         HGDIOBJ oldBrush = (HGDIOBJ)SelectObject(hdc, thumbBrush);
+//         Ellipse(hdc, x, y, x+height, y+height);
+//         SelectObject(hdc, oldBrush);
+//         DeleteObject(thumbBrush);
+//     }
+// };
 
 class KeyloggerUI {
 public:
     int windowWidth, windowHeight;
-    std::unique_ptr<Element> root;
+    std::shared_ptr<Element> root;
+    std::vector<std::wstring> sections {L"Transparency", L"Font", L"Background Color", L"Fade Duration", L"Position"};
     KeyloggerUI(): windowWidth(0), windowHeight(0) {}
-    KeyloggerUI(int windowWidth, int windowHeight): windowWidth(windowWidth), windowHeight(windowHeight) {
-        root = std::make_unique<Element>(0, 0, windowWidth, windowHeight);
-        std::unique_ptr<Element> paddingContainer = std::make_unique<PaddingContainer>(root->x, root->y, root->width, root->height, 16, 16);
-        std::unique_ptr<Element> flexContainer = std::make_unique<FlexContainer>(paddingContainer->x, paddingContainer->y, paddingContainer->width, paddingContainer->height, VERTICAL, 0, 16);
-        std::unique_ptr<Element> display = std::make_unique<Box>(0, 0, flexContainer->width, 80, RGB(200, 200, 200), 8);
-        std::unique_ptr<Element> sectionText1 = std::make_unique<Text>(0, 0, flexContainer->width, 24, L"Transparency", 16, RGB(0, 0, 0), TRANSPARENT);
-        std::unique_ptr<Element> slider = std::make_unique<Slider>(0, 0, 360, 16, 50);
-        std::unique_ptr<Element> sectionText2 = std::make_unique<Text>(0, 0, flexContainer->width, 24, L"Font", 16, RGB(0, 0, 0), TRANSPARENT);
-        flexContainer->children.push_back(std::move(display));
-        flexContainer->children.push_back(std::move(sectionText1));
-        flexContainer->children.push_back(std::move(slider));
-        flexContainer->children.push_back(std::move(sectionText2));
-        paddingContainer->children.push_back(std::move(flexContainer));
-        root->children.push_back(std::move(paddingContainer));
+    KeyloggerUI(int windowWidth, int windowHeight, HFONT font): windowWidth(windowWidth), windowHeight(windowHeight) {
+        root = std::make_shared<Element>(RECT{0, 0, windowWidth, windowHeight});
+        std::shared_ptr<Element> background = std::make_shared<Box>(RECT{0, 0, windowWidth, windowHeight}, RGB(24, 24, 37), 0);
+        root->children.push_back(background);
+        std::shared_ptr<Element> paddingContainer = std::make_shared<PaddingContainer>(RECT{0, 0, windowWidth, windowHeight}, 16, 16);
+        root->children.push_back(paddingContainer);
+        std::shared_ptr<Element> flexContainer = std::make_shared<FlexContainer>(paddingContainer->rect, VERTICAL, 20, 20);
+        paddingContainer->children.push_back(flexContainer);
+        std::shared_ptr<Element> display = std::make_shared<Box>(RECT{
+            flexContainer->rect.left, 
+            flexContainer->rect.top, 
+            flexContainer->rect.right, 
+            flexContainer->rect.top + 80
+        }, RGB(0, 0, 0), 8);
+        flexContainer->children.push_back(display);
+        for (std::wstring section : sections) {
+            std::shared_ptr<Element> sectionText = std::make_shared<Text>(RECT{
+                flexContainer->rect.left,
+                flexContainer->rect.top, 
+                flexContainer->rect.right, 
+                flexContainer->rect.top+24
+            }, section, 16, RGB(255, 255, 255), TRANSPARENT, font);
+            flexContainer->children.push_back(sectionText);
+        }
     }
     void draw(HDC hdc)
     {

@@ -26,6 +26,7 @@ struct Settings {
 class SettingsWindow {
 private:
     HWND hwnd = nullptr;
+    HFONT font = nullptr;
     Settings appSettings;
     KeyloggerUI ui;
     std::pair<int, int> windowSize = {600, 400};
@@ -34,7 +35,7 @@ private:
     void SaveSettings();
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
-    SettingsWindow(HINSTANCE hInstance);
+    SettingsWindow(HINSTANCE hInstance, HFONT font);
     ~SettingsWindow();
     HWND GetHwnd();
 };
