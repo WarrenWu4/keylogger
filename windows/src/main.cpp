@@ -13,7 +13,6 @@
 
 #include "vkey.h"
 #include "display.h"
-#include "logging.h"
 #include "system_tray.h"
 #include "font_manager.h"
 #include "settings_window.h"
@@ -24,7 +23,6 @@ KeyWindow* display = nullptr;
 SystemTray* tray = nullptr;
 FontManager* fontManager = nullptr;
 SettingsWindow* settingsWindow = nullptr;
-// Logger* logger = nullptr;
 
 HHOOK hKeyboardHook = nullptr;
 std::wstring textBuffer = L"";
@@ -48,10 +46,6 @@ void cleanup() {
         delete fontManager;
         fontManager = nullptr;
     }
-    // if (logger) {
-    //     delete logger;
-    //     logger = nullptr;
-    // }
     if (settingsWindow) {
         delete settingsWindow;
         settingsWindow = nullptr;
@@ -137,10 +131,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
-    // logger = new Logger("build/debug.log", 102480);
-    // logger->write("Logger initialized\n");
-    // logger->flush();
-
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;

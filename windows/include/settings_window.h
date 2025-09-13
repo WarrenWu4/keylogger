@@ -8,7 +8,7 @@
 #include <locale>
 #include <codecvt>
 
-#include "logging.h"
+#include "ui.h"
 
 #define IDC_EDIT 201
 #define IDC_SPIN 202
@@ -27,16 +27,15 @@ class SettingsWindow {
 private:
     HWND hwnd = nullptr;
     Settings appSettings;
+    KeyloggerUI ui;
     std::pair<int, int> windowSize = {600, 400};
     std::pair<int, int> padding = {16, 16};
     void LoadSettings(const std::wstring& path);
     void SaveSettings();
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    // Logger logger = Logger("build/settings.log", 102480);
 public:
     SettingsWindow(HINSTANCE hInstance);
     ~SettingsWindow();
-    void DrawWindow(HDC hdc);
     HWND GetHwnd();
 };
 

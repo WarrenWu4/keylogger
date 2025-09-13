@@ -1,8 +1,10 @@
+
 CXX = g++
 CXXFLAGS = -Wall -std=c++17 -Iinclude
 WINFLAGS = -mwindows -municode
 LIBFLAGS = -lsetupapi -lole32 -lgdi32 -lcomctl32
 SRC = $(wildcard src/*.cpp)
+HEADERS = $(wildcard include/*.h)
 OBJ = $(patsubst src/%.cpp, $(BUILD_DIR)/%.o, $(SRC))
 BUILD_DIR = build
 RESOURCE_DIR = resources
@@ -24,8 +26,8 @@ $(BUILD_DIR)/$(RESOURCE_DIR): $(BUILD_DIR)
 $(BUILD_DIR)/app.res:
 	windres app.rc -O coff -o $(BUILD_DIR)/app.res -Iinclude
 
-# compile each source file to object file
-$(BUILD_DIR)/%.o: src/%.cpp | $(BUILD_DIR)
+# compile each source file to object file (recompile if any header changes)
+$(BUILD_DIR)/%.o: src/%.cpp $(HEADERS) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(WINFLAGS) -c $< -o $@
 
 # link object files into executable

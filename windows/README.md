@@ -1,5 +1,7 @@
 # Keylogger
 
+**settings page is still wip!!! don't use that shit for now**
+
 ## Installation
 
 ### Build from scratch
