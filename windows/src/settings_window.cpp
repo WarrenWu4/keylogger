@@ -49,6 +49,12 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, HFONT font) {
         flexContainer->rect.top + 80
     }, RGB(0, 0, 0), 8);
     flexContainer->children.push_back(display);
+    std::shared_ptr<Element> transparencySlider = std::make_shared<Slider>(RECT{
+        flexContainer->rect.left, 
+        flexContainer->rect.top, 
+        flexContainer->rect.left + 200, 
+        flexContainer->rect.top + 16
+    }, 0);
     for (std::wstring section : sections) {
         std::shared_ptr<Element> sectionText = std::make_shared<Text>(RECT{
             flexContainer->rect.left,
@@ -57,6 +63,9 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, HFONT font) {
             flexContainer->rect.top+24
         }, section, 16, RGB(255, 255, 255), TRANSPARENT, font);
         flexContainer->children.push_back(sectionText);
+        if (section == L"Transparency") {
+            flexContainer->children.push_back(transparencySlider);
+        }
     }
 }
 

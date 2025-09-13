@@ -100,20 +100,23 @@ public:
     }
 };
 
-// class Slider : public Element {
-// public:
-//     int value;
-//     Slider(int x = 0, int y = 0, int width = 0, int height = 0, int value = 0) : Element(x, y, width, height), value(value) {}
-//     void draw(HDC hdc) override {
-//         HBRUSH trackBrush = CreateSolidBrush(RGB(200, 200, 200));
-//         RECT trackRect = {x, y+(height-height/4)/2 , x + width, y + height / 4};
-//         FillRect(hdc, &trackRect, trackBrush);
-//         DeleteObject(trackBrush);
+class Slider : public Element {
+public:
+    int value;
+    Slider(RECT rect, int value) : Element(rect), value(value) {}
+    void draw(HDC hdc) override {
+        int containerHeight = rect.bottom - rect.top;
+        int trackHeight = 4;
+        int offset = (containerHeight - trackHeight) / 2;
+        HBRUSH trackBrush = CreateSolidBrush(RGB(110, 110, 110));
+        RECT trackRect = {rect.left, rect.top + offset, rect.right, rect.bottom-offset};
+        RoundRect(hdc, trackRect.left, trackRect.top, trackRect.right, trackRect.bottom, 40, 40);
+        DeleteObject(trackBrush);
 
-//         HBRUSH thumbBrush = CreateSolidBrush(RGB(0, 0, 0));
-//         HGDIOBJ oldBrush = (HGDIOBJ)SelectObject(hdc, thumbBrush);
-//         Ellipse(hdc, x, y, x+height, y+height);
-//         SelectObject(hdc, oldBrush);
-//         DeleteObject(thumbBrush);
-//     }
-// };
+        HBRUSH thumbBrush = CreateSolidBrush(RGB(255, 255, 255));
+        HGDIOBJ oldBrush = (HGDIOBJ)SelectObject(hdc, thumbBrush);
+        Ellipse(hdc, rect.left, rect.top, rect.left+containerHeight, rect.top+containerHeight);
+        SelectObject(hdc, oldBrush);
+        DeleteObject(thumbBrush);
+    }
+};
