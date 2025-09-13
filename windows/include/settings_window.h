@@ -7,7 +7,6 @@
 #include <tchar.h>
 #include <locale>
 #include <codecvt>
-
 #include "ui.h"
 
 #define IDC_EDIT 201
@@ -28,9 +27,9 @@ private:
     HWND hwnd = nullptr;
     HFONT font = nullptr;
     Settings appSettings;
-    KeyloggerUI ui;
     std::pair<int, int> windowSize = {600, 400};
     std::pair<int, int> padding = {16, 16};
+    std::shared_ptr<Element> root;
     void LoadSettings(const std::wstring& path);
     void SaveSettings();
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

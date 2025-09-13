@@ -34,8 +34,30 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, HFONT font) {
         return;
     }
 
-    this->font = font;
-    ui = KeyloggerUI(windowSize.first, windowSize.second, font);
+    std::vector<std::wstring> sections {L"Transparency", L"Font", L"Background Color", L"Fade Duration", L"Position"};
+    root = std::make_shared<Element>(RECT{0, 0, windowSize.first, windowSize.second});
+    std::shared_ptr<Element> background = std::make_shared<Box>(RECT{0, 0, windowSize.first, windowSize.second}, RGB(24, 24, 37), 0);
+    root->children.push_back(background);
+    std::shared_ptr<Element> paddingContainer = std::make_shared<PaddingContainer>(RECT{0, 0, windowSize.first, windowSize.second}, 16, 16);
+    root->children.push_back(paddingContainer);
+    std::shared_ptr<Element> flexContainer = std::make_shared<FlexContainer>(paddingContainer->rect, VERTICAL, 20, 20);
+    paddingContainer->children.push_back(flexContainer);
+    std::shared_ptr<Element> display = std::make_shared<Box>(RECT{
+        flexContainer->rect.left, 
+        flexContainer->rect.top, 
+        flexContainer->rect.right, 
+        flexContainer->rect.top + 80
+    }, RGB(0, 0, 0), 8);
+    flexContainer->children.push_back(display);
+    for (std::wstring section : sections) {
+        std::shared_ptr<Element> sectionText = std::make_shared<Text>(RECT{
+            flexContainer->rect.left,
+            flexContainer->rect.top, 
+            flexContainer->rect.right, 
+            flexContainer->rect.top+24
+        }, section, 16, RGB(255, 255, 255), TRANSPARENT, font);
+        flexContainer->children.push_back(sectionText);
+    }
 }
 
 SettingsWindow::~SettingsWindow() {
@@ -46,6 +68,10 @@ SettingsWindow::~SettingsWindow() {
 }
 
 void SettingsWindow::LoadSettings(const std::wstring& path = L"../resources/settings.json") {
+
+}
+
+void Draw() {
 
 }
 
@@ -74,7 +100,7 @@ LRESULT CALLBACK SettingsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            window->ui.draw(hdc);
+            window->root->draw(hdc);
             EndPaint(hwnd, &ps);
             break;
         }
