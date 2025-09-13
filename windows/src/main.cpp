@@ -104,7 +104,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            display->drawText(hdc, fontManager->getFont()); 
+            display->drawText(hdc, fontManager->GetFont(0)); 
             EndPaint(hwnd, &ps);
             break;
         }
@@ -152,7 +152,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     display = new KeyWindow(hInstance);
     tray = new SystemTray(hInstance, display->getHwnd());
     fontManager = new FontManager(hInstance, display->getHwnd());
-    settingsWindow = new SettingsWindow(hInstance, fontManager->getFont());
+    settingsWindow = new SettingsWindow(hInstance, fontManager->GetFont(1));
     ShowWindow(display->getHwnd(), SW_SHOW);
 
     MSG msg = { };

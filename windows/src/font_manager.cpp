@@ -6,7 +6,7 @@ FontManager::FontManager(HINSTANCE hInstance, HWND hwnd) {
     void* pFontData = LockResource(hMem);
     DWORD fontSize = SizeofResource(hInstance, hRes);
     DWORD nFonts = 0;
-    hFontRes = AddFontMemResourceEx(pFontData, fontSize, NULL, &nFonts);
+    defaultFontRes = AddFontMemResourceEx(pFontData, fontSize, NULL, &nFonts);
     HDC hdc = GetDC(hwnd);
     int logPixelsY = GetDeviceCaps(hdc, LOGPIXELSY);
     ReleaseDC(hwnd, hdc);
@@ -15,24 +15,50 @@ FontManager::FontManager(HINSTANCE hInstance, HWND hwnd) {
         logPixelsY, 
         72
     );
-    hFont = CreateFont(
+    defaultFont = CreateFont(
+        fontHeight, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+        DEFAULT_PITCH | FF_MODERN, L"JetBrains Mono"
+    );
+    fonts[0] = defaultFont;
+    fonts[1] = FontManager::KCreateFont(12);
+}
+
+FontManager::~FontManager() {
+    if (defaultFont) {
+        DeleteObject(defaultFont);
+        defaultFont = nullptr;
+    }
+    if (defaultFontRes) {
+        RemoveFontMemResourceEx(defaultFontRes);
+        defaultFontRes = nullptr;
+    }
+    for (auto& pair : fonts) {
+        if (pair.second) {
+            DeleteObject(pair.second);
+        }
+    }
+}
+
+HFONT FontManager::KCreateFont(int fontSize) {
+    HDC hdc = GetDC(NULL);
+    int logPixelsY = GetDeviceCaps(hdc, LOGPIXELSY);
+    ReleaseDC(NULL, hdc);
+    int fontHeight = -MulDiv(
+        fontSize,
+        logPixelsY,
+        72
+    );
+    return CreateFont(
         fontHeight, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
         DEFAULT_PITCH | FF_MODERN, L"JetBrains Mono"
     );
 }
 
-FontManager::~FontManager() {
-    if (hFont) {
-        DeleteObject(hFont);
-        hFont = nullptr;
+HFONT FontManager::GetFont(int fontId) {
+    if (fonts.find(fontId) != fonts.end()) {
+        return fonts[fontId];
     }
-    if (hFontRes) {
-        RemoveFontMemResourceEx(hFontRes);
-        hFontRes = nullptr;
-    }
-}
-
-HFONT FontManager::getFont() {
-    return hFont;
+    return defaultFont;
 }
