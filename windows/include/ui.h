@@ -7,7 +7,6 @@
 #include <iostream>
 #include "font_manager.h"
 
-
 enum FlexDirection {
     HORIZONTAL,
     VERTICAL
@@ -18,9 +17,18 @@ public:
     RECT rect = {0, 0, 0, 0};
     std::vector<std::shared_ptr<Element>> children;
     Element(RECT rect): rect(rect) {}
-    virtual void draw(HDC hdc) {
+    virtual void draw(HDC hdc) {};
+    virtual void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {};
+    virtual void drawStart(HDC hdc) {
+        draw(hdc);
         for (size_t i = 0; i < children.size(); i++) {
-            children[i]->draw(hdc);
+            children[i]->drawStart(hdc);
+        }
+    }
+    virtual void handlerStart(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+        handler(hwnd, msg, wParam, lParam);
+        for (size_t i = 0; i < children.size(); i++) {
+            children[i]->handlerStart(hwnd, msg, wParam, lParam);
         }
     }
 };
@@ -52,8 +60,6 @@ public:
                 children[i]->rect.top = children[i-1]->rect.bottom + gapY;
                 children[i]->rect.bottom = children[i]->rect.top + childHeight;
             }
-            // MessageBox(NULL, std::to_wstring(children[i]->rect.top).c_str(), L"Debug", MB_OK);
-            // MessageBox(NULL, std::to_wstring(children[i]->rect.bottom).c_str(), L"Debug", MB_OK);
             children[i]->draw(hdc);
         }
     }
@@ -97,6 +103,33 @@ public:
         HFONT oldFont = (HFONT)SelectObject(hdc, font);
         DrawTextW(hdc, text.c_str(), -1, &rect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
         SelectObject(hdc, oldFont);
+    }
+};
+
+class Button : public Element {
+public:
+    const std::function<void()>& handleClick;
+    std::wstring text;
+    COLORREF textColor;
+    COLORREF bgColor;
+    Button(RECT rect, const std::wstring& text, COLORREF textColor, COLORREF bgColor, const std::function<void()>& handleClick) : Element(rect), text(text), textColor(textColor), bgColor(bgColor), handleClick(handleClick) {}
+    void draw(HDC hdc) override {
+        children.push_back(
+            std::make_shared<Box>(rect, bgColor, 8)
+        );
+        children.push_back(
+            std::make_shared<Text>(rect, text, 16, textColor, TRANSPARENT, nullptr)
+        );
+    }
+    void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) override {
+        if (msg == WM_LBUTTONDOWN) {
+            POINT cursorPos;
+            GetCursorPos(&cursorPos);
+            ScreenToClient(hwnd, &cursorPos);
+            if (PtInRect(&rect, cursorPos)) {
+                MessageBox(NULL, L"Button click confirmed", L"Debug", MB_OK);
+            }
+        }
     }
 };
 

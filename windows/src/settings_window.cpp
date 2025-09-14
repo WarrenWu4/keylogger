@@ -34,10 +34,14 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, HFONT font) {
         return;
     }
 
-    std::vector<std::wstring> sections {L"Transparency", L"Font", L"Background Color", L"Fade Duration", L"Position"};
-    root = std::make_shared<Element>(RECT{0, 0, windowSize.first, windowSize.second});
-    std::shared_ptr<Element> background = std::make_shared<Box>(RECT{0, 0, windowSize.first, windowSize.second}, RGB(24, 24, 37), 0);
-    root->children.push_back(background);
+    std::vector<std::pair<std::wstring, std::shared_ptr<Element>>> sections {
+        {L"Transparency", std::make_shared<Slider>(RECT{0, 0, 200, 16}, 0)},
+        {L"Font", nullptr},
+        {L"Background Color", nullptr},
+        {L"Fade Duration", nullptr},
+        {L"Position", nullptr}
+    };
+    root = std::make_shared<Box>(RECT{0, 0, windowSize.first, windowSize.second}, RGB(24, 24, 37), 0);
     std::shared_ptr<Element> paddingContainer = std::make_shared<PaddingContainer>(RECT{0, 0, windowSize.first, windowSize.second}, 16, 16);
     root->children.push_back(paddingContainer);
     std::shared_ptr<Element> flexContainer = std::make_shared<FlexContainer>(paddingContainer->rect, VERTICAL, 20, 20);
@@ -55,18 +59,29 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, HFONT font) {
         flexContainer->rect.left + 200, 
         flexContainer->rect.top + 16
     }, 0);
-    for (std::wstring section : sections) {
-        std::shared_ptr<Element> sectionText = std::make_shared<Text>(RECT{
-            flexContainer->rect.left,
+    flexContainer->children.push_back(
+        std::make_shared<Button>(RECT{
+            flexContainer->rect.left, 
             flexContainer->rect.top, 
-            flexContainer->rect.right, 
-            flexContainer->rect.top+24
-        }, section, 16, RGB(255, 255, 255), TRANSPARENT, font);
-        flexContainer->children.push_back(sectionText);
-        if (section == L"Transparency") {
-            flexContainer->children.push_back(transparencySlider);
-        }
-    }
+            flexContainer->rect.left + 100, 
+            flexContainer->rect.top + 32
+        }, 
+        L"Test Button", RGB(255, 255, 255), RGB(70, 70, 90), [](){
+            MessageBox(NULL, L"Button clicked!", L"Debug", MB_OK);
+    }));
+    // for (std::pair<std::wstring, std::shared_ptr<Element>> section : sections) {
+    //     flexContainer->children.push_back(
+    //         std::make_shared<Text>(RECT{
+    //             flexContainer->rect.left,
+    //             flexContainer->rect.top, 
+    //             flexContainer->rect.right, 
+    //             flexContainer->rect.top+24
+    //         }, section.first, 16, RGB(255, 255, 255), TRANSPARENT, font)
+    //     );
+    //     if (section.second != nullptr) {
+    //         flexContainer->children.push_back(section.second);
+    //     }
+    // }
 }
 
 SettingsWindow::~SettingsWindow() {
@@ -106,10 +121,14 @@ LRESULT CALLBACK SettingsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
                 break;
             }
         }
+        case WM_LBUTTONDOWN: {
+            window->root->handlerStart(hwnd, uMsg, wParam, lParam);
+            break;
+        }
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            window->root->draw(hdc);
+            window->root->drawStart(hdc);
             EndPaint(hwnd, &ps);
             break;
         }
