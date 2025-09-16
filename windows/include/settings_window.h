@@ -28,8 +28,7 @@ private:
     HFONT font = nullptr;
     Settings appSettings;
     std::pair<int, int> windowSize = {600, 400};
-    std::pair<int, int> padding = {16, 16};
-    std::shared_ptr<Element> root;
+    std::shared_ptr<Element> root = std::make_shared<Element>();
     void LoadSettings(const std::wstring& path);
     void SaveSettings();
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
