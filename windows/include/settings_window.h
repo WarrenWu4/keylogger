@@ -27,7 +27,7 @@ private:
     HWND hwnd = nullptr;
     HFONT font = nullptr;
     Settings appSettings;
-    std::pair<int, int> windowSize = {600, 400};
+    std::pair<int, int> windowSize = {600, 600};
     std::shared_ptr<Element> root = std::make_shared<Element>();
     void LoadSettings(const std::wstring& path);
     void SaveSettings();

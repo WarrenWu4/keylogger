@@ -125,16 +125,19 @@ private:
     COLORREF backgroundColor = TRANSPARENT;
     COLORREF borderColor = TRANSPARENT;
     int borderRadius = 0;
+    int borderWidth = 0;
 public:
     COLORREF getBackgroundColor() { return backgroundColor; }
     COLORREF getBorderColor() { return borderColor; }
     int getBorderRadius() { return borderRadius; }
+    int getBorderWidth() { return borderWidth; }
     Box& setBackgroundColor(COLORREF newBackgroundColor) { backgroundColor = newBackgroundColor; return *this; }
     Box& setBorderColor(COLORREF newBorderColor) { borderColor = newBorderColor; return *this; }
     Box& setBorderRadius(int newBorderRadius) { borderRadius = newBorderRadius; return *this; }
+    Box& setBorderWidth(int newBorderWidth) { borderWidth = newBorderWidth; return *this; }
     void draw(HDC hdc) override {
         HBRUSH background = CreateSolidBrush(backgroundColor);
-        HPEN border = CreatePen(PS_SOLID, 1, borderColor);
+        HPEN border = CreatePen(PS_SOLID, borderWidth, borderColor);
         HGDIOBJ oldBackground = SelectObject(hdc, background);
         HGDIOBJ oldBorder = SelectObject(hdc, border);
         RECT rect = this->getRect();
@@ -180,10 +183,8 @@ public:
     HFONT getFont() { return font; }
     Text& setFont(HFONT newFont) { 
         // ! assumes that only font family changes
-        if (font) {
-            DeleteObject(font);
-        }
         font = newFont; 
+        this->setSize({getTextWidth(), fontSize + 8});
         return *this; 
     }
     COLORREF getTextColor() { return textColor; }
@@ -199,7 +200,11 @@ public:
         }
     }
     void draw(HDC hdc) override {
-        SetBkMode(hdc, backgroundColor);
+        if (backgroundColor == TRANSPARENT) {
+            SetBkMode(hdc, TRANSPARENT);
+        } else {
+            SetBkColor(hdc, backgroundColor);
+        }
         SetTextColor(hdc, textColor);
         HFONT oldFont = (HFONT)SelectObject(hdc, font);
         RECT rect = this->getRect();
@@ -315,6 +320,85 @@ public:
     }
 };
 
+class Dropdown : public Element {
+private:
+    std::shared_ptr<Box> selectedContainer = std::make_shared<Box>();
+    std::shared_ptr<Text> selectedText = std::make_shared<Text>();
+
+    std::shared_ptr<Box> optionsContainer = std::make_shared<Box>();
+    std::vector<std::shared_ptr<Text>> optionElements;
+    std::vector<std::wstring> options;
+    bool showOptions = false;
+    int selectedIndex = 0;
+    HFONT font = nullptr;
+
+public:
+    Dropdown& setFont(HFONT newFont) {
+        font = newFont;
+        return *this;
+    }
+    std::shared_ptr<Box> getSelectedContainer() { return selectedContainer; }
+    std::shared_ptr<Text> getSelectedText() { return selectedText; }
+    std::shared_ptr<Box> getOptionsContainer() { return optionsContainer; }
+    std::vector<std::wstring> getOptions() { return options; }
+    Dropdown& setOptions(const std::vector<std::wstring>& newOptions) { 
+        options = newOptions;
+        optionElements.clear();
+        for (size_t i = 0; i < options.size(); i++) {
+            std::shared_ptr<Text> optionText = std::make_shared<Text>();
+            optionText->setText(options[i]).setFontSize(12).setTextColor(RGB(0, 0, 0));
+            optionElements.push_back(optionText);
+        }
+        return *this;
+    }
+    int getSelectedIndex() { return selectedIndex; }
+    Dropdown& setSelectedIndex(int newIndex) {
+        if (newIndex >= 0 && newIndex < static_cast<int>(options.size())) {
+            selectedIndex = newIndex;
+            selectedText->setText(options[selectedIndex]).centerFromElement(selectedContainer);
+        }
+        return *this;
+    }
+    void draw(HDC hdc) override {  
+        selectedContainer->draw(hdc);
+        selectedText->draw(hdc);
+        if (showOptions) {
+            optionsContainer->draw(hdc);
+            for (size_t i = 0; i < optionElements.size(); i++) {
+                optionElements[i]->setFont(font).setPosition({
+                    0,
+                    optionsContainer->getPosition().y + 8 + static_cast<int>(i) * 36 
+                }).horizontalCenterFromElement(optionsContainer);
+                optionElements[i]->draw(hdc);
+            }
+        }
+    }
+    void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) override {
+        if (msg == WM_LBUTTONDOWN) {
+            POINT cursorPos;
+            GetCursorPos(&cursorPos);
+            ScreenToClient(hwnd, &cursorPos);
+            RECT selectedRect = selectedContainer->getRect();
+            RECT optionsRect = optionsContainer->getRect();
+            if (PtInRect(&selectedRect, cursorPos)) {
+                showOptions = !showOptions;
+                InvalidateRect(hwnd, &optionsRect, TRUE);
+            }
+            if (PtInRect(&optionsRect, cursorPos) && showOptions) {
+                int optionHeight = 36;
+                int relativeY = cursorPos.y - optionsRect.top;
+                int clickedIndex = relativeY / optionHeight;
+                if (clickedIndex >= 0 && clickedIndex < static_cast<int>(options.size())) {
+                    setSelectedIndex(clickedIndex);
+                    showOptions = false;
+                    InvalidateRect(hwnd, &selectedRect, TRUE);
+                    InvalidateRect(hwnd, &optionsRect, TRUE);
+                }
+            }
+        }
+    }
+};
+
 // class Button : public Element {
 // public:
 //     std::wstring text;
@@ -342,20 +426,3 @@ public:
 //     }
 // };
 
-
-// class Dropdown : public Element {
-// public:
-//     std::vector<std::wstring> options;
-//     bool showOptions;
-//     int selectedIndex;
-//     RECT menuRect;
-//     Dropdown(RECT rect, std::vector<std::wstring> options, bool showOptions, int selectedIndex): Element(rect), options(options), selectedIndex(selectedIndex), showOptions(showOptions) {}
-//     void draw(HDC hdc) override {  
-//         children.push_back(
-//             std::make_shared<Box>(rect, RGB(50, 50, 50), 8)
-//         );
-//         children.push_back(
-//             std::make_shared<Text>(rect, options[selectedIndex], 16, RGB(255, 255, 255), TRANSPARENT, nullptr, DT_CENTER | DT_VCENTER | DT_SINGLELINE)
-//         );
-//     }
-// };
