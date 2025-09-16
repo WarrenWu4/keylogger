@@ -14,11 +14,6 @@ namespace UI {
         VERTICAL
     };
 
-    struct POINT {
-        int x = 0;
-        int y = 0;
-    };
-
     using POSITION = POINT;
     using PADDING = POINT;
     using GAP = POINT;
@@ -63,6 +58,11 @@ public:
     }
     RECT getRect() { return rect; }
     std::vector<std::shared_ptr<Element>>& getChildren() { return children; }
+    int getLastChildBottom() {
+        if (children.size() == 0) { return 0; }
+        RECT lastChildRect = children.back()->getRect();
+        return lastChildRect.bottom;
+    }
     Element& addChild(const std::shared_ptr<Element>& newChild) { children.push_back(newChild); return *this; }
     Element& removeChild(size_t childIndex) { 
         if (childIndex >= 0 && childIndex < children.size()) {
@@ -96,38 +96,27 @@ public:
         });
         return *this; 
     }
-    void centerFromElement(std::shared_ptr<Element> element) {
+    void horizontalCenterFromElement(std::shared_ptr<Element> element) {
         if (element == nullptr) { return; }
         UI::POSITION elPosition = element->getPosition();
         UI::SIZE elSize = element->getSize();
         this->setPosition({
             (elPosition.x + elSize.width/2) - (size.width) / 2,
+            position.y
+        });
+    }
+    void verticalCenterFromElement(std::shared_ptr<Element> element) {
+        if (element == nullptr) { return; }
+        UI::POSITION elPosition = element->getPosition();
+        UI::SIZE elSize = element->getSize();
+        this->setPosition({
+            position.x,
             (elPosition.y + elSize.height/2) - (size.height) / 2
         });
     }
-};
-
-class FlexContainer : public Element {
-private:
-    UI::FLEXDIRECTION direction;
-    UI::GAP gap;
-public:
-    UI::FLEXDIRECTION getDirection() { return direction; }
-    Element& setDirection(UI::FLEXDIRECTION newDirection) { direction = newDirection; return *this; }
-    UI::GAP getGap() { return gap; }
-    Element& setGap(UI::GAP newGap) { gap = newGap; return *this; }
-    virtual void draw(HDC hdc) override {
-        int offsetX = 0;
-        int offsetY = 0;
-        for (size_t i = 0; i < getChildren().size(); i++) {
-            std::shared_ptr<Element> child = getChildren()[i];
-            child->setPosition({getPosition().x + offsetX, getPosition().y + offsetY});
-            if (direction == UI::HORIZONTAL) {
-                offsetX += child->getSize().width + gap.x;
-            } else {
-                offsetY += child->getSize().height + gap.y;
-            }
-        }
+    void centerFromElement(std::shared_ptr<Element> element) {
+        horizontalCenterFromElement(element);
+        verticalCenterFromElement(element);
     }
 };
 
@@ -219,6 +208,113 @@ public:
     }
 };
 
+class Circle : public Element {
+private:
+    COLORREF backgroundColor = TRANSPARENT;
+    COLORREF borderColor = TRANSPARENT;
+    int borderWidth = 0;
+public:
+    COLORREF getBackgroundColor() { return backgroundColor; }
+    COLORREF getBorderColor() { return borderColor; }
+    int getBorderWidth() { return borderWidth; }
+    Circle& setBackgroundColor(COLORREF newBackgroundColor) { backgroundColor = newBackgroundColor; return *this; }
+    Circle& setBorderColor(COLORREF newBorderColor) { borderColor = newBorderColor; return *this; }
+    Circle& setBorderWidth(int newBorderWidth) { borderWidth = newBorderWidth; return *this; }
+    void draw(HDC hdc) override {
+        HBRUSH background = CreateSolidBrush(backgroundColor);
+        HPEN border = CreatePen(PS_SOLID, borderWidth, borderColor);
+        HGDIOBJ oldBackground = SelectObject(hdc, background);
+        HGDIOBJ oldBorder = SelectObject(hdc, border);
+        RECT rect = this->getRect();
+        Ellipse(hdc, rect.left, rect.top, rect.right, rect.bottom);
+        SelectObject(hdc, oldBackground);
+        SelectObject(hdc, oldBorder);
+        DeleteObject(background);
+        DeleteObject(border);
+    }
+};
+
+class Slider : public Element {
+private:
+    int value = 0;
+    std::shared_ptr<Text> label = std::make_shared<Text>();
+    std::shared_ptr<Box> track = std::make_shared<Box>();
+    std::shared_ptr<Circle> thumb = std::make_shared<Circle>();
+    bool dragging = false;
+
+    void syncThumbPosition() {
+        // ! syncs the thumb position to the value
+        POINT thumbRange = {
+            track->getRect().left + thumb->getSize().width / 2,
+            track->getRect().right - thumb->getSize().width / 2
+        };
+        int thumbOffset = thumbRange.x + (thumbRange.y - thumbRange.x) * value / 100.0f;
+        thumb->setPosition({
+            thumbOffset - thumb->getSize().width / 2,
+            thumb->getPosition().y
+        });
+    }
+
+    int getRelativeSliderValue(POINT cursorPos) {
+        RECT trackRect = track->getRect();
+        int relativeValue = (cursorPos.x - trackRect.left) * 100 / (trackRect.right - trackRect.left);
+        return std::clamp(relativeValue, 0, 100);
+    }
+public:
+    int getValue() { return value; }
+    Slider& setValue(int newValue) {
+        value = std::clamp(newValue, 0, 100);
+        label->setText(std::to_wstring(value) + L"%");
+        return *this;
+    }
+    Text& getLabel() { return *label; }
+    Box& getTrack() { return *track; }
+    Circle& getThumb() { return *thumb; }
+    void draw(HDC hdc) override {
+        syncThumbPosition();
+        label->draw(hdc);
+        track->draw(hdc);
+        thumb->draw(hdc);
+    }
+    void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) override {
+        switch (msg) {
+            case WM_LBUTTONDOWN: {
+                POINT cursorPos;
+                GetCursorPos(&cursorPos);
+                ScreenToClient(hwnd, &cursorPos);
+                RECT thumbRect = thumb->getRect();
+                if (PtInRect(&thumbRect, cursorPos)) {
+                    dragging = true;
+                    SetCapture(hwnd);
+                }
+                break;
+            }
+            case WM_MOUSEMOVE: {
+                if (dragging) {
+                    POINT cursorPos;
+                    GetCursorPos(&cursorPos);
+                    ScreenToClient(hwnd, &cursorPos);
+                    setValue(getRelativeSliderValue(cursorPos));
+                    RECT thumbRect = thumb->getRect();
+                    InvalidateRect(hwnd, &thumbRect, TRUE);
+                    RECT textRect = label->getRect();
+                    // ! add a little extra padding to avoid cut off
+                    textRect.right += 20;
+                    InvalidateRect(hwnd, &textRect, TRUE);
+                }
+                break;
+            }
+            case WM_LBUTTONUP: {
+                if (dragging) {
+                    dragging = false;
+                    ReleaseCapture();
+                }
+                break;
+            }
+        }
+    }
+};
+
 // class Button : public Element {
 // public:
 //     std::wstring text;
@@ -246,64 +342,6 @@ public:
 //     }
 // };
 
-// // TODO: fix slider thumb position calculation
-// class Slider : public Element {
-// public:
-//     int value;
-//     RECT thumbRect;
-//     RECT trackRect;
-//     bool dragging = false;
-//     Slider(RECT rect, int value) : Element(rect), value(value) {}
-//     void draw(HDC hdc) override {
-//         int containerHeight = rect.bottom - rect.top;
-//         int trackHeight = 4;
-//         int offset = (containerHeight - trackHeight) / 2;
-//         trackRect = {rect.left, rect.top + offset, rect.right, rect.bottom-offset};
-//         int thumbOffset = value * (rect.right - rect.left) / 100;
-//         thumbRect = {rect.left + thumbOffset, rect.top, rect.left + thumbOffset + containerHeight, rect.top + containerHeight};
-//         HBRUSH trackBrush = CreateSolidBrush(RGB(110, 110, 110));
-//         RoundRect(hdc, trackRect.left, trackRect.top, trackRect.right, trackRect.bottom, 40, 40);
-//         DeleteObject(trackBrush);
-
-//         HBRUSH thumbBrush = CreateSolidBrush(RGB(255, 255, 255));
-//         HGDIOBJ oldBrush = (HGDIOBJ)SelectObject(hdc, thumbBrush);
-//         Ellipse(hdc, thumbRect.left, thumbRect.top, thumbRect.right, thumbRect.bottom);
-//         SelectObject(hdc, oldBrush);
-//         DeleteObject(thumbBrush);
-//     }
-//     void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) override {
-//         switch (msg) {
-//             case WM_LBUTTONDOWN: {
-//                 POINT cursorPos;
-//                 GetCursorPos(&cursorPos);
-//                 ScreenToClient(hwnd, &cursorPos);
-//                 if (PtInRect(&thumbRect, cursorPos)) {
-//                     dragging = true;
-//                     SetCapture(hwnd);
-//                 }
-//                 break;
-//             }
-//             case WM_MOUSEMOVE: {
-//                 if (dragging) {
-//                     POINT cursorPos;
-//                     GetCursorPos(&cursorPos);
-//                     ScreenToClient(hwnd, &cursorPos);
-//                     int newValue = (cursorPos.x - trackRect.left) * 100 / (trackRect.right - trackRect.left);
-//                     value = std::clamp(newValue, 0, 100);
-//                     InvalidateRect(hwnd, &thumbRect, TRUE);
-//                 }
-//                 break;
-//             }
-//             case WM_LBUTTONUP: {
-//                 if (dragging) {
-//                     dragging = false;
-//                     ReleaseCapture();
-//                 }
-//                 break;
-//             }
-//         }
-//     }
-// };
 
 // class Dropdown : public Element {
 // public:

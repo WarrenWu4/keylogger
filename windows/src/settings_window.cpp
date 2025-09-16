@@ -37,12 +37,28 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, HFONT font) {
     root->setSize({windowSize.first, windowSize.second}).setPosition({0, 0}).setPadding({16, 16});
 
     std::shared_ptr<Box> display = std::make_shared<Box>();
-    display->setBackgroundColor(RGB(0, 0, 0)).setBorderRadius(16).setSize({root->getSize().width, 80}).setPosition(root->getPosition());
+    display->setBackgroundColor(RGB(0, 0, 0)).setBorderRadius(8).setSize({root->getSize().width, 80}).setPosition(root->getPosition());
+    root->addChild(display);
+
     std::shared_ptr<Text> displayText = std::make_shared<Text>();
     displayText->setText(L"example text here").setFontSize(12).setTextColor(RGB(255, 255, 255)).setFont(font).centerFromElement(display);
     display->addChild(displayText);
 
-    root->addChild(display);
+    std::shared_ptr<Text> transparencyLabel = std::make_shared<Text>();
+    transparencyLabel->setFont(font).setText(L"Opacity").setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
+    root->addChild(transparencyLabel);
+
+    std::shared_ptr<Slider> transparencySlider = std::make_shared<Slider>();
+    transparencySlider->setValue(0).setSize({200, 16}).setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
+    transparencySlider->getLabel().setText(L"0%").setFont(font).setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({transparencySlider->getRect().right + 6, transparencySlider->getPosition().y}).verticalCenterFromElement(transparencySlider);
+    transparencySlider->getTrack().setBackgroundColor(RGB(120, 120, 120)).setBorderRadius(4).setSize({200, 4}).setPosition(root->getPosition()).verticalCenterFromElement(transparencySlider);
+    transparencySlider->getThumb().setBackgroundColor(RGB(0, 0, 0)).setSize({16, 16}).setPosition({0, transparencySlider->getPosition().y});
+    root->addChild(transparencySlider);
+
+    std::shared_ptr<Text> fadeLabel = std::make_shared<Text>();
+    fadeLabel->setFont(font).setText(L"Fade Duration").setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
+    root->addChild(fadeLabel);
+
 }
 
 SettingsWindow::~SettingsWindow() {
@@ -81,12 +97,15 @@ LRESULT CALLBACK SettingsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
         case WM_MOUSEMOVE:
         case WM_LBUTTONUP:
         case WM_LBUTTONDOWN: {
-            // window->root->handlerStart(hwnd, uMsg, wParam, lParam);
+            window->root->handlerStart(hwnd, uMsg, wParam, lParam);
             break;
         }
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
+            HBRUSH clearPaint = CreateSolidBrush(RGB(255, 255, 255));
+            FillRect(hdc, &ps.rcPaint, clearPaint);
+            DeleteObject(clearPaint);
             window->root->drawStart(hdc);
             EndPaint(hwnd, &ps);
             break;
