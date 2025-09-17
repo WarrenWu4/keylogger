@@ -66,6 +66,24 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, HFONT font) {
     fadeDropdown->getSelectedText()->setFont(font).setFontSize(12).setTextColor(RGB(0, 0, 0)).centerFromElement(fadeDropdown->getSelectedContainer());
     fadeDropdown->getOptionsContainer()->setBackgroundColor(RGB(255, 255, 255)).setBorderColor(RGB(0, 0, 0)).setBorderRadius(8).setBorderWidth(2).setSize({120, static_cast<int>(fadeOptions.size()) * 36}).setPosition({fadeDropdown->getPosition().x, fadeDropdown->getSelectedContainer()->getRect().bottom + 4});
     root->addChild(fadeDropdown);
+
+    std::shared_ptr<Text> positionLabel = std::make_shared<Text>();
+    positionLabel->setFont(font)
+        .setText(L"Position")
+        .setFontSize(12)
+        .setTextColor(RGB(0, 0, 0))
+        .setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
+    root->addChild(positionLabel);
+
+    std::shared_ptr<Text> positionDescription = std::make_shared<Text>();
+    positionDescription->setFont(font)
+        .setText(L"To adjust position, click and drag the display. Position will be automatically saved between sessions.")
+        .setTextAlignment(DT_WORDBREAK | DT_LEFT)
+        .setFontSize(12)
+        .setTextColor(RGB(0, 0, 0));
+    positionDescription->setPosition({root->getPosition().x, root->getLastChildBottom() + 8})
+        .setSize({root->getSize().width, positionDescription->getSize().height*2});
+    root->addChild(positionDescription);
 }
 
 SettingsWindow::~SettingsWindow() {
