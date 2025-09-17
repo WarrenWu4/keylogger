@@ -20,27 +20,22 @@ FontManager::FontManager(HINSTANCE hInstance, HWND hwnd) {
         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
         DEFAULT_PITCH | FF_MODERN, L"JetBrains Mono"
     );
-    fonts[0] = defaultFont;
-    fonts[1] = FontManager::KCreateFont(12);
+    fonts[L"JetBrains Mono"][16] = defaultFont;
+    fonts[L"JetBrains Mono"][12] = FontManager::createNewFont(12);
+    fonts[L"JetBrains Mono"][8] = FontManager::createNewFont(8);
 }
 
 FontManager::~FontManager() {
-    if (defaultFont) {
-        DeleteObject(defaultFont);
-        defaultFont = nullptr;
-    }
-    if (defaultFontRes) {
-        RemoveFontMemResourceEx(defaultFontRes);
-        defaultFontRes = nullptr;
-    }
     for (auto& pair : fonts) {
-        if (pair.second) {
-            DeleteObject(pair.second);
+        for (auto& sizePair : pair.second) {
+            if (sizePair.second) {
+                DeleteObject(sizePair.second);
+            }
         }
     }
 }
 
-HFONT FontManager::KCreateFont(int fontSize) {
+HFONT FontManager::createNewFont(int fontSize) {
     HDC hdc = GetDC(NULL);
     int logPixelsY = GetDeviceCaps(hdc, LOGPIXELSY);
     ReleaseDC(NULL, hdc);
@@ -56,9 +51,11 @@ HFONT FontManager::KCreateFont(int fontSize) {
     );
 }
 
-HFONT FontManager::GetFont(int fontId) {
-    if (fonts.find(fontId) != fonts.end()) {
-        return fonts[fontId];
+HFONT FontManager::getFont(std::wstring fontName, int fontSize) {
+    if (fonts.find(fontName) != fonts.end()) {
+        if (fonts[fontName].find(fontSize) != fonts[fontName].end()) {
+            return fonts[fontName][fontSize];
+        }
     }
     return defaultFont;
 }

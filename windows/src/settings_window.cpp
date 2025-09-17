@@ -1,6 +1,7 @@
 #include "settings_window.h"
 
-SettingsWindow::SettingsWindow(HINSTANCE hInstance, HFONT font) {
+SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager) {
+    this->fontManager = fontManager;
     INITCOMMONCONTROLSEX icex;
     icex.dwSize = sizeof(icex);
     icex.dwICC = ICC_UPDOWN_CLASS;
@@ -33,6 +34,8 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, HFONT font) {
         MessageBox(NULL, L"Failed to create settings window!", L"Error", MB_OK);
         return;
     }
+
+    HFONT font = fontManager->getFont(L"JetBrains Mono", 12);
 
     root->setSize({windowSize.first, windowSize.second}).setPosition({0, 0}).setPadding({16, 16});
 
@@ -76,7 +79,7 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, HFONT font) {
     root->addChild(positionLabel);
 
     std::shared_ptr<Text> positionDescription = std::make_shared<Text>();
-    positionDescription->setFont(font)
+    positionDescription->setFont(fontManager->getFont(L"JetBrains Mono", 8))
         .setText(L"To adjust position, click and drag the display. Position will be automatically saved between sessions.")
         .setTextAlignment(DT_WORDBREAK | DT_LEFT)
         .setFontSize(12)

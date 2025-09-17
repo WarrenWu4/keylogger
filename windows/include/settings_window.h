@@ -8,6 +8,7 @@
 #include <locale>
 #include <codecvt>
 #include "ui.h"
+#include "font_manager.h"
 
 #define IDC_EDIT 201
 #define IDC_SPIN 202
@@ -25,15 +26,17 @@ struct Settings {
 class SettingsWindow {
 private:
     HWND hwnd = nullptr;
-    HFONT font = nullptr;
     Settings appSettings;
     std::pair<int, int> windowSize = {600, 600};
     std::shared_ptr<Element> root = std::make_shared<Element>();
+
+    std::shared_ptr<FontManager> fontManager = nullptr;
+
     void LoadSettings(const std::wstring& path);
     void SaveSettings();
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
-    SettingsWindow(HINSTANCE hInstance, HFONT font);
+    SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager);
     ~SettingsWindow();
     HWND GetHwnd();
 };

@@ -21,7 +21,7 @@
 
 KeyWindow* display = nullptr;
 SystemTray* tray = nullptr;
-FontManager* fontManager = nullptr;
+std::shared_ptr<FontManager> fontManager = nullptr;
 SettingsWindow* settingsWindow = nullptr;
 
 HHOOK hKeyboardHook = nullptr;
@@ -41,10 +41,6 @@ void cleanup() {
     if (tray) {
         delete tray;
         tray = nullptr;
-    }
-    if (fontManager) {
-        delete fontManager;
-        fontManager = nullptr;
     }
     if (settingsWindow) {
         delete settingsWindow;
@@ -104,7 +100,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            display->drawText(hdc, fontManager->GetFont(0)); 
+            display->drawText(hdc, fontManager->getFont(L"JetBrains Mono", 16)); 
             EndPaint(hwnd, &ps);
             break;
         }
@@ -151,8 +147,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
     display = new KeyWindow(hInstance);
     tray = new SystemTray(hInstance, display->getHwnd());
-    fontManager = new FontManager(hInstance, display->getHwnd());
-    settingsWindow = new SettingsWindow(hInstance, fontManager->GetFont(1));
+    fontManager = std::make_shared<FontManager>(hInstance, display->getHwnd());
+    settingsWindow = new SettingsWindow(hInstance, fontManager);
     ShowWindow(display->getHwnd(), SW_SHOW);
 
     MSG msg = { };
