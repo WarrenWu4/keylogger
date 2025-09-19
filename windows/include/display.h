@@ -23,6 +23,8 @@ private:
     double transparency = 1.0;
 
     HFONT font = nullptr;
+    COLORREF backgroundColor = RGB(0, 0, 0);
+    COLORREF rectColor = RGB(255, 0, 0);
 
 public:
     KeyWindow(HINSTANCE hInstance);
@@ -33,6 +35,17 @@ public:
     void drawText(HDC hdc);
     KeyWindow& setFont(HFONT newFont) {
         font = newFont; 
+        RECT temp = this->rect;
+        InvalidateRect(hwnd, &temp, TRUE);
         return *this; 
+    }
+    KeyWindow& setBackgroundColor(COLORREF newBackgroundColor) {
+        if (newBackgroundColor == rectColor) {
+            rectColor = backgroundColor;
+        }
+        backgroundColor = newBackgroundColor; 
+        RECT temp = this->rect;
+        InvalidateRect(hwnd, &temp, TRUE);
+        return *this;
     }
 };

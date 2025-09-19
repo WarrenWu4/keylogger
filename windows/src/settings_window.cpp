@@ -86,7 +86,6 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
         appSettings.fontSize = clampedFontSize;
         HFONT font = this->fontManager->createNewFont(clampedFontSize);
         this->display->setFont(font);
-        InvalidateRect(this->display->getHwnd(), this->display->getRect(), TRUE);
         fti->getLabel()->setText(std::to_wstring(clampedFontSize));
     });
     root->addChild(fti);
@@ -128,6 +127,7 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
         std::wstring hexText = bgci->getLabel()->getText();
         bgcb->setBackgroundColor(hexToRgbFunc(hexText, defaultColor));
         appSettings.backgroundColor = bgcb->getBackgroundColor();
+        this->display->setBackgroundColor(appSettings.backgroundColor);
         if (hexText.size() == 7 && hexText[0] == L'#') {
             bgci->getLabel()->setText(hexText);
         } else {

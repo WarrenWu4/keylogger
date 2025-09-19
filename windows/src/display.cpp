@@ -34,11 +34,9 @@ HWND KeyWindow::getHwnd() {
 
 void KeyWindow::drawText(HDC hdc) {
     if (text.empty()) { return; }
-    COLORREF rectColor = RGB(255, 0, 0);
-    COLORREF bgColor = RGB(0, 0, 0);
     COLORREF textColor = RGB(255, 255, 255);
     SetTextColor(hdc, textColor);
-    SetBkColor(hdc, bgColor);
+    SetBkColor(hdc, backgroundColor);
     HFONT oldFont = (HFONT)SelectObject(hdc, font);
     HBRUSH brush = CreateSolidBrush(rectColor);
     FillRect(hdc, &rect, brush);
