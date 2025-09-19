@@ -26,20 +26,24 @@ KeyWindow::~KeyWindow() {
         DestroyWindow(hwnd);
         hwnd = NULL;
     }
+    if (font) {
+        DeleteObject(font);
+        font = nullptr;
+    }
 }
 
 HWND KeyWindow::getHwnd() {
     return this->hwnd;
 }
 
-void KeyWindow::drawText(HDC hdc, HFONT hFont) {
+void KeyWindow::drawText(HDC hdc) {
     if (text.empty()) { return; }
     COLORREF rectColor = RGB(255, 0, 0);
     COLORREF bgColor = RGB(0, 0, 0);
     COLORREF textColor = RGB(255, 255, 255);
     SetTextColor(hdc, textColor);
     SetBkColor(hdc, bgColor);
-    HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
+    HFONT oldFont = (HFONT)SelectObject(hdc, font);
     HBRUSH brush = CreateSolidBrush(rectColor);
     FillRect(hdc, &rect, brush);
     SetLayeredWindowAttributes(hwnd, rectColor, (BYTE)(255*transparency), LWA_COLORKEY | LWA_ALPHA);

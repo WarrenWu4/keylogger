@@ -100,7 +100,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            display->drawText(hdc, fontManager->getFont(L"JetBrains Mono", 16)); 
+            display->drawText(hdc); 
             EndPaint(hwnd, &ps);
             break;
         }
@@ -148,6 +148,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     display = new KeyWindow(hInstance);
     tray = new SystemTray(hInstance, display->getHwnd());
     fontManager = std::make_shared<FontManager>(hInstance, display->getHwnd());
+    display->setFont(fontManager->getFont(L"JetBrains Mono", 16));
     settingsWindow = new SettingsWindow(hInstance, fontManager);
     ShowWindow(display->getHwnd(), SW_SHOW);
 

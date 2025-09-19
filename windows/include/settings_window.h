@@ -33,12 +33,18 @@ private:
     std::shared_ptr<FontManager> fontManager = nullptr;
 
     void LoadSettings(const std::wstring& path);
-    void SaveSettings();
+    void saveSettings();
+    void updateSettings(const std::function<void(Settings&)>& appSettings) { updateSettings(appSettings); saveSettings(); }
+    
+    COLORREF hexToRgb(std::wstring hex, COLORREF defaultColor = RGB(0, 0, 0));
+    std::wstring rgbToHex(COLORREF color);
+
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
     SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager);
     ~SettingsWindow();
-    HWND GetHwnd();
+    Settings getSettings() { return appSettings; }
+    HWND GetHwnd() { return hwnd; }
 };
 
 

@@ -11,21 +11,18 @@
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
 
-struct Point {
-    int x;
-    int y;
-};
-
 class KeyWindow {
 private:
     HWND hwnd = nullptr;
     RECT rect;
-    Point padding = {6, 4};
+    POINT padding = {6, 4};
     std::wstring text = L"";
 
-    Point windowSize = {0, 0};
-    Point windowOffset = {0, 0};
+    POINT windowSize = {0, 0};
+    POINT windowOffset = {0, 0};
     double transparency = 1.0;
+
+    HFONT font = nullptr;
 
 public:
     KeyWindow(HINSTANCE hInstance);
@@ -33,5 +30,9 @@ public:
     HWND getHwnd();
     RECT* getRect();
     void setText(const std::wstring& newText);
-    void drawText(HDC hdc, HFONT hFont);
+    void drawText(HDC hdc);
+    KeyWindow& setFont(HFONT newFont) {
+        font = newFont; 
+        return *this; 
+    }
 };

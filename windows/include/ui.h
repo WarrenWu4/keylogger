@@ -57,6 +57,12 @@ public:
         }
     }
     RECT getRect() { return rect; }
+    Element& setRect(RECT newRect) {
+        rect = newRect; 
+        position = {rect.left, rect.top};
+        size = {rect.right - rect.left, rect.bottom - rect.top};
+        return *this;
+    }
     std::vector<std::shared_ptr<Element>>& getChildren() { return children; }
     int getLastChildBottom() {
         if (children.size() == 0) { return 0; }
@@ -399,30 +405,85 @@ public:
     }
 };
 
-// class Button : public Element {
-// public:
-//     std::wstring text;
-//     COLORREF textColor;
-//     COLORREF bgColor;
-//     std::function<void()> handleClick;
-//     Button(RECT rect, const std::wstring& text, COLORREF textColor, COLORREF bgColor, std::function<void()> handleClick) : Element(rect), text(text), textColor(textColor), bgColor(bgColor), handleClick(handleClick) {}
-//     void draw(HDC hdc) override {
-//         children.push_back(
-//             std::make_shared<Box>(rect, bgColor, 8)
-//         );
-//         children.push_back(
-//             std::make_shared<Text>(rect, text, 16, textColor, TRANSPARENT, nullptr, DT_CENTER | DT_VCENTER | DT_SINGLELINE)
-//         );
-//     }
-//     void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) override {
-//         if (msg == WM_LBUTTONDOWN) {
-//             POINT cursorPos;
-//             GetCursorPos(&cursorPos);
-//             ScreenToClient(hwnd, &cursorPos);
-//             if (PtInRect(&rect, cursorPos)) {
-//                 handleClick();
-//             }
-//         }
-//     }
-// };
+class TextInput : public Element {
+private:
+    std::shared_ptr<Text> label = std::make_shared<Text>();
+    std::shared_ptr<Box> container = std::make_shared<Box>();
+    bool focus = false;
+    std::wstring validCharacters = L"";
+    int minLength = 0;
+    int maxLength = 50;
+    std::function<void()> onSubmit = nullptr;
 
+    bool isValidChar(wchar_t inputChar) {
+        return (validCharacters.find(inputChar) != std::wstring::npos);
+    }
+public:
+    std::shared_ptr<Text> getLabel() { return label; }
+    std::shared_ptr<Box> getContainer() { return container; }
+    TextInput& setFocus(bool newFocus) { focus = newFocus; return *this; }
+    bool isFocused() { return focus; }
+    TextInput& setValidCharacters(std::wstring newValidCharacters) { validCharacters = newValidCharacters; return *this; }
+    TextInput& setMaxLength(int newMaxLength) { maxLength = newMaxLength; return *this; }
+    TextInput& setMinLength(int newMinLength) { minLength = newMinLength; return *this; }
+    TextInput& setOnSubmit(std::function<void()> newOnSubmit) { onSubmit = newOnSubmit; return *this; }
+    void draw(HDC hdc) override {  
+        container->draw(hdc);
+        label->draw(hdc);
+    }
+    void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) override {
+        switch (msg) {
+            case WM_LBUTTONDOWN: {
+                POINT cursorPos;
+                GetCursorPos(&cursorPos);
+                ScreenToClient(hwnd, &cursorPos);
+                RECT containerRect = container->getRect();
+                if (PtInRect(&containerRect, cursorPos)) {
+                    if (focus) {
+                        container->setBorderColor(RGB(0, 0, 0));
+                    } else {
+                        container->setBorderColor(RGB(0, 0, 255));
+                    }
+                    focus = !focus;
+                }
+                InvalidateRect(hwnd, &containerRect, TRUE);
+                break;
+            }
+            case WM_CHAR: {
+                if (focus) {
+                    switch (wParam) {
+                        case VK_RETURN:
+                        case VK_ESCAPE: {
+                            focus = false;
+                            container->setBorderColor(RGB(0, 0, 0));
+                            if (onSubmit) { onSubmit(); }
+                            RECT tempRect = container->getRect();
+                            InvalidateRect(hwnd, &tempRect, TRUE);
+                            break;
+                        }
+                        case VK_BACK: {
+                            std::wstring currentText = label->getText();
+                            if (currentText.length() > static_cast<size_t>(minLength)) {
+                                currentText.pop_back();
+                                label->setText(currentText);
+                                RECT tempRect = getRect();
+                                InvalidateRect(hwnd, &tempRect, TRUE);
+                            }
+                            break;
+                        }
+                        default: {
+                            std::wstring currentText = label->getText();
+                            if (isValidChar(static_cast<wchar_t>(wParam)) && currentText.length() < static_cast<size_t>(maxLength)) {
+                                label->setText(currentText + static_cast<wchar_t>(wParam));
+                                RECT tempRect = getRect();
+                                InvalidateRect(hwnd, &tempRect, TRUE);
+                            }
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+};
