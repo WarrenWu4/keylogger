@@ -240,13 +240,9 @@ LRESULT CALLBACK SettingsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
             EndPaint(hwnd, &ps);
             break;
         }
-        case WM_DESTROY: {
-            ShowWindow(hwnd, SW_HIDE);
-            break;
-        }
         case WM_CLOSE: {
             ShowWindow(hwnd, SW_HIDE);
-            break;
+            return 0;
         }
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
