@@ -26,10 +26,6 @@ KeyWindow::~KeyWindow() {
         DestroyWindow(hwnd);
         hwnd = NULL;
     }
-    if (font) {
-        DeleteObject(font);
-        font = nullptr;
-    }
 }
 
 HWND KeyWindow::getHwnd() {

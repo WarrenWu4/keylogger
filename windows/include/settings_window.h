@@ -9,6 +9,7 @@
 #include <codecvt>
 #include "ui.h"
 #include "font_manager.h"
+#include "display.h"
 
 #define IDC_EDIT 201
 #define IDC_SPIN 202
@@ -31,6 +32,7 @@ private:
     std::shared_ptr<Element> root = std::make_shared<Element>();
 
     std::shared_ptr<FontManager> fontManager = nullptr;
+    std::shared_ptr<KeyWindow> display = nullptr;
 
     void LoadSettings(const std::wstring& path);
     void saveSettings();
@@ -41,7 +43,7 @@ private:
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
-    SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager);
+    SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager, std::shared_ptr<KeyWindow> display);
     ~SettingsWindow();
     Settings getSettings() { return appSettings; }
     HWND GetHwnd() { return hwnd; }

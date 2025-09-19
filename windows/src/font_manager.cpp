@@ -44,11 +44,12 @@ HFONT FontManager::createNewFont(int fontSize) {
         logPixelsY,
         72
     );
-    return CreateFont(
+    fonts[L"JetBrains Mono"][fontSize] = CreateFont(
         fontHeight, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
         DEFAULT_PITCH | FF_MODERN, L"JetBrains Mono"
     );
+    return fonts[L"JetBrains Mono"][fontSize];
 }
 
 HFONT FontManager::getFont(std::wstring fontName, int fontSize) {

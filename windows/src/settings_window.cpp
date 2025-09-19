@@ -1,7 +1,8 @@
 #include "settings_window.h"
 
-SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager) {
+SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager, std::shared_ptr<KeyWindow> display) {
     this->fontManager = fontManager;
+    this->display = display;
     INITCOMMONCONTROLSEX icex;
     icex.dwSize = sizeof(icex);
     icex.dwICC = ICC_UPDOWN_CLASS;
@@ -41,21 +42,6 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
         .setPosition({0, 0})
         .setPadding({16, 16});
 
-    std::shared_ptr<Box> display = std::make_shared<Box>();
-    display->setBackgroundColor(RGB(0, 0, 0))
-        .setBorderRadius(8)
-        .setSize({root->getSize().width, 80})
-        .setPosition(root->getPosition());
-    root->addChild(display);
-
-    std::shared_ptr<Text> displayText = std::make_shared<Text>();
-    displayText->setText(L"example text here")
-        .setFontSize(12)
-        .setTextColor(RGB(255, 255, 255))
-        .setFont(font)
-        .centerFromElement(display);
-    display->addChild(displayText);
-
     std::shared_ptr<Text> transparencyLabel = std::make_shared<Text>();
     transparencyLabel->setFont(font)
         .setText(L"Opacity")
@@ -70,7 +56,6 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
     transparencySlider->getTrack().setBackgroundColor(RGB(200, 200, 200)).setBorderRadius(4).setBorderWidth(0).setSize({200, 4}).setPosition(root->getPosition()).verticalCenterFromElement(transparencySlider);
     transparencySlider->getThumb().setBackgroundColor(RGB(0, 0, 0)).setSize({16, 16}).setPosition({0, transparencySlider->getPosition().y});
     root->addChild(transparencySlider);
-
 
     std::shared_ptr<Text> ftl = std::make_shared<Text>();
     ftl->setFont(font)
@@ -99,6 +84,9 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
         int newFontSize = std::stoi(fti->getLabel()->getText());
         int clampedFontSize = std::clamp(newFontSize, 8, 40);
         appSettings.fontSize = clampedFontSize;
+        HFONT font = this->fontManager->createNewFont(clampedFontSize);
+        this->display->setFont(font);
+        InvalidateRect(this->display->getHwnd(), this->display->getRect(), TRUE);
         fti->getLabel()->setText(std::to_wstring(clampedFontSize));
     });
     root->addChild(fti);

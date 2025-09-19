@@ -19,10 +19,10 @@
 
 #define IDT_INACTIVE_TIMER 1
 
-KeyWindow* display = nullptr;
-SystemTray* tray = nullptr;
+std::shared_ptr<KeyWindow> display = nullptr;
+std::shared_ptr<SystemTray> tray = nullptr;
 std::shared_ptr<FontManager> fontManager = nullptr;
-SettingsWindow* settingsWindow = nullptr;
+std::shared_ptr<SettingsWindow> settingsWindow = nullptr;
 
 HHOOK hKeyboardHook = nullptr;
 std::wstring textBuffer = L"";
@@ -35,16 +35,6 @@ void cleanup() {
     }
     if (display) {
         KillTimer(display->getHwnd(), IDT_INACTIVE_TIMER);
-        delete display;
-        display = nullptr;
-    }
-    if (tray) {
-        delete tray;
-        tray = nullptr;
-    }
-    if (settingsWindow) {
-        delete settingsWindow;
-        settingsWindow = nullptr;
     }
 }
 
@@ -145,11 +135,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 1;
     }
 
-    display = new KeyWindow(hInstance);
-    tray = new SystemTray(hInstance, display->getHwnd());
+    display = std::make_shared<KeyWindow>(hInstance);
+    tray = std::make_shared<SystemTray>(hInstance, display->getHwnd());
     fontManager = std::make_shared<FontManager>(hInstance, display->getHwnd());
     display->setFont(fontManager->getFont(L"JetBrains Mono", 16));
-    settingsWindow = new SettingsWindow(hInstance, fontManager);
+    settingsWindow = std::make_shared<SettingsWindow>(hInstance, fontManager, display);
     ShowWindow(display->getHwnd(), SW_SHOW);
 
     MSG msg = { };
