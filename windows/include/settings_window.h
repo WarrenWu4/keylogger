@@ -10,6 +10,8 @@
 #include "ui.h"
 #include "font_manager.h"
 #include "display.h"
+#include "resource_finder.h"
+#include "jsonge.h"
 
 #define IDC_EDIT 201
 #define IDC_SPIN 202
@@ -31,10 +33,12 @@ private:
     std::pair<int, int> windowSize = {600, 600};
     std::shared_ptr<Element> root = std::make_shared<Element>();
 
+    std::shared_ptr<ResourceFinder> resourceFinder = std::make_shared<ResourceFinder>();
+    std::shared_ptr<Json> jsonParser = std::make_shared<Json>();
     std::shared_ptr<FontManager> fontManager = nullptr;
     std::shared_ptr<KeyWindow> display = nullptr;
 
-    void LoadSettings(const std::wstring& path);
+    void loadSettings();
     void saveSettings();
     void updateSettings(const std::function<void(Settings&)>& appSettings) { updateSettings(appSettings); saveSettings(); }
     

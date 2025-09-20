@@ -1,329 +1,119 @@
 #pragma once
 
-#include <cstdint>
-#include <iomanip>
+#include <any>
+#include <cctype>
+#include <cstddef>
+#include <fstream>
+#include <iostream>
+#include <istream>
+#include <iterator>
 #include <string>
-#include <vector>
 #include <unordered_map>
-#include <memory>
-#include <sstream>
-#include <stdexcept>
-#include <cstring>
-#include <cmath>
+#include <vector>
+#include <regex>
+#include <variant>
+#include <cassert>
+#include <map>
 
-namespace json {
+struct JsonValue;
+using JsonArray = std::vector<JsonValue>;
+using JsonObject = std::map<std::string, JsonValue>;
+using JsonType = std::variant<
+    std::nullptr_t,
+    bool,
+    double,
+    std::string,
+    JsonArray,
+    JsonObject
+>;
 
-// Forward declarations
-class Value;
-using Object = std::unordered_map<std::string, Value>;
-using Array = std::vector<Value>;
-
-enum class Type {
-    Null,
-    Bool,
-    Number,
-    String,
-    Array,
-    Object
-};
-
-class Value {
-public:
-    Value() : type_(Type::Null) {}
-    Value(std::nullptr_t) : type_(Type::Null) {}
-    Value(bool b) : type_(Type::Bool), bool_(b) {}
-    Value(int i) : type_(Type::Number), number_(i) {}
-    Value(double d) : type_(Type::Number), number_(d) {}
-    Value(const char* s) : type_(Type::String), string_(std::make_unique<std::string>(s)) {}
-    Value(const std::string& s) : type_(Type::String), string_(std::make_unique<std::string>(s)) {}
-    Value(std::string&& s) : type_(Type::String), string_(std::make_unique<std::string>(std::move(s))) {}
-    Value(const Array& a) : type_(Type::Array), array_(std::make_unique<Array>(a)) {}
-    Value(Array&& a) : type_(Type::Array), array_(std::make_unique<Array>(std::move(a))) {}
-    Value(const Object& o) : type_(Type::Object), object_(std::make_unique<Object>(o)) {}
-    Value(Object&& o) : type_(Type::Object), object_(std::make_unique<Object>(std::move(o))) {}
-
-    // Copy constructor
-    Value(const Value& other) : type_(other.type_) {
-        switch (type_) {
-            case Type::Bool: bool_ = other.bool_; break;
-            case Type::Number: number_ = other.number_; break;
-            case Type::String: string_ = std::make_unique<std::string>(*other.string_); break;
-            case Type::Array: array_ = std::make_unique<Array>(*other.array_); break;
-            case Type::Object: object_ = std::make_unique<Object>(*other.object_); break;
-            default: break;
-        }
+struct JsonValue {
+    JsonType value;
+    bool isNull() const { return std::holds_alternative<std::nullptr_t>(value); }
+    bool isBool() const { return std::holds_alternative<bool>(value); }
+    bool isNumber() const { return std::holds_alternative<double>(value); }
+    bool isString() const { return std::holds_alternative<std::string>(value); }
+    bool isArray() const { return std::holds_alternative<JsonArray>(value); }
+    bool isObject() const { return std::holds_alternative<JsonObject>(value); }
+    bool getBool() const {
+        if (!isBool()) throw std::runtime_error("Type is not bool");
+        return std::get<bool>(value);
     }
-
-    // Move constructor
-    Value(Value&& other) noexcept : type_(other.type_) {
-        switch (type_) {
-            case Type::Bool: bool_ = other.bool_; break;
-            case Type::Number: number_ = other.number_; break;
-            case Type::String: string_ = std::move(other.string_); break;
-            case Type::Array: array_ = std::move(other.array_); break;
-            case Type::Object: object_ = std::move(other.object_); break;
-            default: break;
-        }
-        other.type_ = Type::Null;
+    double getNumber() const {
+        if (!isNumber()) throw std::runtime_error("Type is not number");
+        return std::get<double>(value);
     }
-
-    // Assignment operators
-    Value& operator=(const Value& other) {
-        if (this != &other) {
-            this->~Value();
-            new (this) Value(other);
-        }
-        return *this;
+    const std::string& getString() const {
+        if (!isString()) throw std::runtime_error("Type is not string");
+        return std::get<std::string>(value);
     }
-
-    Value& operator=(Value&& other) noexcept {
-        if (this != &other) {
-            this->~Value();
-            new (this) Value(std::move(other));
-        }
-        return *this;
+    const JsonArray& getArray() const {
+        if (!isArray()) throw std::runtime_error("Type is not array");
+        return std::get<JsonArray>(value);
     }
-
-    ~Value() {
-        switch (type_) {
-            case Type::String: string_.reset(); break;
-            case Type::Array: array_.reset(); break;
-            case Type::Object: object_.reset(); break;
-            default: break;
-        }
-    }
-
-    Type type() const { return type_; }
-    
-    bool isNull() const { return type_ == Type::Null; }
-    bool isBool() const { return type_ == Type::Bool; }
-    bool isNumber() const { return type_ == Type::Number; }
-    bool isString() const { return type_ == Type::String; }
-    bool isArray() const { return type_ == Type::Array; }
-    bool isObject() const { return type_ == Type::Object; }
-
-    bool asBool() const {
-        if (type_ != Type::Bool) throw std::runtime_error("Value is not a boolean");
-        return bool_;
-    }
-
-    double asNumber() const {
-        if (type_ != Type::Number) throw std::runtime_error("Value is not a number");
-        return number_;
-    }
-
-    int asInt() const {
-        if (type_ != Type::Number) throw std::runtime_error("Value is not a number");
-        return static_cast<int>(number_);
-    }
-
-    const std::string& asString() const {
-        if (type_ != Type::String) throw std::runtime_error("Value is not a string");
-        return *string_;
-    }
-
-    const Array& asArray() const {
-        if (type_ != Type::Array) throw std::runtime_error("Value is not an array");
-        return *array_;
-    }
-
-    Array& asArray() {
-        if (type_ != Type::Array) throw std::runtime_error("Value is not an array");
-        return *array_;
-    }
-
-    const Object& asObject() const {
-        if (type_ != Type::Object) throw std::runtime_error("Value is not an object");
-        return *object_;
-    }
-
-    Object& asObject() {
-        if (type_ != Type::Object) throw std::runtime_error("Value is not an object");
-        return *object_;
-    }
-
-    // Array access
-    const Value& operator[](size_t index) const {
-        return asArray()[index];
-    }
-
-    Value& operator[](size_t index) {
-        return asArray()[index];
-    }
-
-    // Object access
-    const Value& operator[](const std::string& key) const {
-        const auto& obj = asObject();
-        auto it = obj.find(key);
-        if (it == obj.end()) {
-            static const Value null_value;
-            return null_value;
-        }
-        return it->second;
-    }
-
-    Value& operator[](const std::string& key) {
-        if (type_ == Type::Null) {
-            *this = Value(Object{});
-        }
-        return asObject()[key];
-    }
-
-    std::string toString() const {
-        std::ostringstream oss;
-        serialize(oss);
-        return oss.str();
-    }
-
-private:
-    Type type_;
-    union {
-        bool bool_;
-        double number_;
-        std::unique_ptr<std::string> string_;
-        std::unique_ptr<Array> array_;
-        std::unique_ptr<Object> object_;
-    };
-
-    void serialize(std::ostringstream& oss) const {
-        switch (type_) {
-            case Type::Null:
-                oss << "null";
-                break;
-            case Type::Bool:
-                oss << (bool_ ? "true" : "false");
-                break;
-            case Type::Number:
-                if (std::floor(number_) == number_ && number_ >= INT64_MIN && number_ <= INT64_MAX) {
-                    oss << static_cast<int64_t>(number_);
-                } else {
-                    oss << number_;
-                }
-                break;
-            case Type::String:
-                oss << '"';
-                for (char c : *string_) {
-                    switch (c) {
-                        case '"': oss << "\\\""; break;
-                        case '\\': oss << "\\\\"; break;
-                        case '\b': oss << "\\b"; break;
-                        case '\f': oss << "\\f"; break;
-                        case '\n': oss << "\\n"; break;
-                        case '\r': oss << "\\r"; break;
-                        case '\t': oss << "\\t"; break;
-                        default:
-                            if (c < 0x20) {
-                                oss << "\\u" << std::hex << std::setw(4) << std::setfill('0') << (int)(unsigned char)c;
-                            } else {
-                                oss << c;
-                            }
-                            break;
-                    }
-                }
-                oss << '"';
-                break;
-            case Type::Array:
-                oss << '[';
-                for (size_t i = 0; i < array_->size(); ++i) {
-                    if (i > 0) oss << ',';
-                    (*array_)[i].serialize(oss);
-                }
-                oss << ']';
-                break;
-            case Type::Object:
-                oss << '{';
-                bool first = true;
-                for (const auto& [key, value] : *object_) {
-                    if (!first) oss << ',';
-                    first = false;
-                    oss << '"' << key << "\":";
-                    value.serialize(oss);
-                }
-                oss << '}';
-                break;
-        }
+    const JsonObject& getObject() const {
+        if (!isObject()) throw std::runtime_error("Type is not object");
+        return std::get<JsonObject>(value);
     }
 };
 
-class Parser {
-public:
-    static Value parse(const std::string& json) {
-        Parser parser(json);
-        return parser.parseValue();
-    }
-
+class Json {
 private:
-    const char* ptr_;
-    const char* end_;
-
-    explicit Parser(const std::string& json) 
-        : ptr_(json.c_str()), end_(ptr_ + json.size()) {}
+    std::string data;
+    size_t end;
+    size_t ptr;
 
     void skipWhitespace() {
-        while (ptr_ < end_ && (*ptr_ == ' ' || *ptr_ == '\t' || *ptr_ == '\n' || *ptr_ == '\r')) {
-            ++ptr_;
-        }
+        while (ptr < end && std::isspace(data[ptr])) { ptr++; }
     }
 
-    void expect(char c) {
-        if (ptr_ >= end_ || *ptr_ != c) {
-            throw std::runtime_error(std::string("Expected '") + c + "'");
-        }
-        ++ptr_;
-    }
-
-    Value parseValue() {
+    JsonValue parseValue() {
         skipWhitespace();
-        if (ptr_ >= end_) {
-            throw std::runtime_error("Unexpected end of input");
-        }
-
-        switch (*ptr_) {
-            case 'n': return parseNull();
-            case 't': case 'f': return parseBool();
-            case '"': return parseString();
-            case '[': return parseArray();
-            case '{': return parseObject();
-            case '-': case '0': case '1': case '2': case '3': case '4':
-            case '5': case '6': case '7': case '8': case '9':
-                return parseNumber();
-            default:
-                throw std::runtime_error(std::string("Unexpected character: ") + *ptr_);
+        assert(ptr < end);
+        switch (data[ptr]) {
+            case 'n': { return parseNull(); }
+            case 't': case 'f': { return parseBool(); }
+            case '-': case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': { return parseNumber(); }
+            case '"': { return parseString(); }
+            case '[': { return parseArray(); }
+            case '{': { return parseObject(); } 
+            default: {
+                throw std::runtime_error("Unexpected character");
+            }
         }
     }
-
-    Value parseNull() {
-        if (end_ - ptr_ >= 4 && std::strncmp(ptr_, "null", 4) == 0) {
-            ptr_ += 4;
-            return Value();
-        }
-        throw std::runtime_error("Invalid null value");
+    
+    JsonValue parseNull() {
+        assert(ptr < end);
+        if (data.substr(ptr, 4) == "null") { ptr += 4; return {nullptr}; }
+        throw std::runtime_error("Cannot parse null value");
     }
 
-    Value parseBool() {
-        if (end_ - ptr_ >= 4 && std::strncmp(ptr_, "true", 4) == 0) {
-            ptr_ += 4;
-            return Value(true);
-        }
-        if (end_ - ptr_ >= 5 && std::strncmp(ptr_, "false", 5) == 0) {
-            ptr_ += 5;
-            return Value(false);
-        }
-        throw std::runtime_error("Invalid boolean value");
+    JsonValue parseBool() {
+        assert(ptr < end);
+        if (data.substr(ptr, 4) == "true") { ptr += 4; return {true}; }
+        if (data.substr(ptr, 5) == "false") { ptr += 5; return {false}; }
+        throw std::runtime_error("Cannot parse boolean value");
     }
 
-    Value parseString() {
-        expect('"');
-        std::string result;
-        
-        while (ptr_ < end_ && *ptr_ != '"') {
-            if (*ptr_ == '\\') {
-                ++ptr_;
-                if (ptr_ >= end_) {
-                    throw std::runtime_error("Unterminated string escape");
+    JsonValue parseNumber() {
+        size_t start = ptr;
+        while (ptr < data.length() && (isdigit(static_cast<unsigned char>(data[ptr])) || data[ptr] == '.' || data[ptr] == '-' || data[ptr] == 'e' || data[ptr] == 'E')) {
+            ptr++;
+        }
+        return {std::stod(data.substr(start, ptr - start))};
+    }
+
+    JsonValue parseString() {
+        ptr++;
+        std::string result = "";
+        while (ptr < data.length() && data[ptr] != '"') {
+            if (data[ptr] == '\\') {
+                ptr++;
+                if (ptr >= data.length()) {
+                    throw std::runtime_error("Invalid escape sequence");
                 }
-                
-                switch (*ptr_) {
+                switch (data[ptr]) {
                     case '"': result += '"'; break;
                     case '\\': result += '\\'; break;
                     case '/': result += '/'; break;
@@ -332,195 +122,93 @@ private:
                     case 'n': result += '\n'; break;
                     case 'r': result += '\r'; break;
                     case 't': result += '\t'; break;
-                    case 'u': {
-                        ++ptr_;
-                        if (end_ - ptr_ < 4) {
-                            throw std::runtime_error("Invalid unicode escape");
-                        }
-                        
-                        int codepoint = 0;
-                        for (int i = 0; i < 4; ++i) {
-                            char c = ptr_[i];
-                            int digit;
-                            if (c >= '0' && c <= '9') digit = c - '0';
-                            else if (c >= 'a' && c <= 'f') digit = c - 'a' + 10;
-                            else if (c >= 'A' && c <= 'F') digit = c - 'A' + 10;
-                            else throw std::runtime_error("Invalid unicode escape");
-                            
-                            codepoint = (codepoint << 4) | digit;
-                        }
-                        
-                        // Convert codepoint to UTF-8
-                        if (codepoint <= 0x7F) {
-                            result += static_cast<char>(codepoint);
-                        } else if (codepoint <= 0x7FF) {
-                            result += static_cast<char>(0xC0 | (codepoint >> 6));
-                            result += static_cast<char>(0x80 | (codepoint & 0x3F));
-                        } else {
-                            result += static_cast<char>(0xE0 | (codepoint >> 12));
-                            result += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
-                            result += static_cast<char>(0x80 | (codepoint & 0x3F));
-                        }
-                        ptr_ += 3; // Will be incremented at end of loop
-                        break;
-                    }
-                    default:
-                        throw std::runtime_error(std::string("Invalid escape sequence: \\") + *ptr_);
+                    default: throw std::runtime_error("Invalid escape sequence");
                 }
             } else {
-                result += *ptr_;
+                result += data[ptr];
             }
-            ++ptr_;
+            ptr++;
         }
-        
-        expect('"');
-        return Value(std::move(result));
+        if (ptr >= data.length()) {
+            throw std::runtime_error("Unterminated string literal");
+        }
+        ptr++; // Skip final '"'
+        return {result};
     }
 
-    Value parseNumber() {
-        const char* start = ptr_;
-        
-        // Handle negative sign
-        if (*ptr_ == '-') ++ptr_;
-        
-        // Parse integer part
-        if (ptr_ >= end_ || !isDigit(*ptr_)) {
-            throw std::runtime_error("Invalid number");
-        }
-        
-        if (*ptr_ == '0') {
-            ++ptr_;
-        } else {
-            while (ptr_ < end_ && isDigit(*ptr_)) {
-                ++ptr_;
-            }
-        }
-        
-        bool isFloat = false;
-        
-        // Parse fractional part
-        if (ptr_ < end_ && *ptr_ == '.') {
-            isFloat = true;
-            ++ptr_;
-            if (ptr_ >= end_ || !isDigit(*ptr_)) {
-                throw std::runtime_error("Invalid number: missing digits after decimal point");
-            }
-            while (ptr_ < end_ && isDigit(*ptr_)) {
-                ++ptr_;
-            }
-        }
-        
-        // Parse exponent
-        if (ptr_ < end_ && (*ptr_ == 'e' || *ptr_ == 'E')) {
-            isFloat = true;
-            ++ptr_;
-            if (ptr_ < end_ && (*ptr_ == '+' || *ptr_ == '-')) {
-                ++ptr_;
-            }
-            if (ptr_ >= end_ || !isDigit(*ptr_)) {
-                throw std::runtime_error("Invalid number: missing exponent digits");
-            }
-            while (ptr_ < end_ && isDigit(*ptr_)) {
-                ++ptr_;
-            }
-        }
-        
-        std::string numStr(start, ptr_ - start);
-        double value = std::stod(numStr);
-        return Value(value);
-    }
-
-    Value parseArray() {
-        expect('[');
-        Array result;
-        
+    JsonValue parseArray() {
+        ptr++;
         skipWhitespace();
-        if (ptr_ < end_ && *ptr_ == ']') {
-            ++ptr_;
-            return Value(std::move(result));
+        JsonArray arr;
+        if (data[ptr] == ']') {
+            ptr++;
+            return {arr};
         }
-        
         while (true) {
-            result.push_back(parseValue());
-            
+            arr.push_back(parseValue());
             skipWhitespace();
-            if (ptr_ >= end_) {
-                throw std::runtime_error("Unterminated array");
-            }
-            
-            if (*ptr_ == ']') {
-                ++ptr_;
+            if (data[ptr] == ']') {
+                ptr++;
                 break;
-            } else if (*ptr_ == ',') {
-                ++ptr_;
-                skipWhitespace();
-            } else {
-                throw std::runtime_error("Expected ',' or ']' in array");
+            } else if (data[ptr] != ',') {
+                throw std::runtime_error("Expected ',' or ']'");
             }
+            ptr++;
         }
-        
-        return Value(std::move(result));
+        return {arr};
     }
 
-    Value parseObject() {
-        expect('{');
-        Object result;
-        
+    JsonValue parseObject() {
+        ptr++;
         skipWhitespace();
-        if (ptr_ < end_ && *ptr_ == '}') {
-            ++ptr_;
-            return Value(std::move(result));
+        JsonObject obj;
+        if (data[ptr] == '}') {
+            ptr++;
+            return {obj};
         }
-        
         while (true) {
-            // Parse key
+            std::string key = std::get<std::string>(parseString().value);
             skipWhitespace();
-            if (ptr_ >= end_ || *ptr_ != '"') {
-                throw std::runtime_error("Expected string key in object");
-            }
-            
-            Value keyValue = parseString();
-            std::string key = keyValue.asString();
-            
-            // Parse colon
+            if (data[ptr] != ':') { throw std::runtime_error("Expected ':'"); }
+            ptr++;
             skipWhitespace();
-            expect(':');
-            
-            // Parse value
-            Value value = parseValue();
-            result[key] = std::move(value);
-            
+            obj[key] = parseValue();
             skipWhitespace();
-            if (ptr_ >= end_) {
-                throw std::runtime_error("Unterminated object");
-            }
-            
-            if (*ptr_ == '}') {
-                ++ptr_;
+            if (data[ptr] == '}') {
+                ptr++;
                 break;
-            } else if (*ptr_ == ',') {
-                ++ptr_;
-            } else {
-                throw std::runtime_error("Expected ',' or '}' in object");
+            } else if (data[ptr] != ',') {
+                throw std::runtime_error("Expected ',' or '}'");
             }
+            ptr++;
+            skipWhitespace();
         }
-        
-        return Value(std::move(result));
+        return {obj};
     }
 
-    static bool isDigit(char c) {
-        return c >= '0' && c <= '9';
+    std::string readFile(std::string path) {
+        std::ifstream file(path.c_str());
+        if (!file.is_open()) {
+            throw std::runtime_error("Unable to open file");
+        }
+        std::string res(
+            (std::istreambuf_iterator<char>(file)),
+            std::istreambuf_iterator<char>()
+        );
+        return res;
+    }
+
+public:
+    JsonValue parse(std::string text) {
+        data = text;
+        end = data.size();
+        ptr = 0;
+        return parseValue();
+    }
+    JsonValue parseFromFile(std::string path) {
+        data = readFile(path);
+        end = data.size();
+        ptr = 0;
+        return parseValue();
     }
 };
-
-// Convenience functions
-inline Value parse(const std::string& json) {
-    return Parser::parse(json);
-}
-
-inline std::string stringify(const Value& value) {
-    return value.toString();
-}
-
-} // namespace json
-

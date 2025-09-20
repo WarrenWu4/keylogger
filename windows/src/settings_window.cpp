@@ -1,6 +1,7 @@
 #include "settings_window.h"
 
 SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager, std::shared_ptr<KeyWindow> display) {
+    loadSettings();
     this->fontManager = fontManager;
     this->display = display;
     INITCOMMONCONTROLSEX icex;
@@ -197,8 +198,20 @@ SettingsWindow::~SettingsWindow() {
     }
 }
 
-void SettingsWindow::LoadSettings(const std::wstring& path = L"../resources/settings.json") {
-
+void SettingsWindow::loadSettings() {
+    std::wstring settingsPath = resourceFinder->getResource(L"settings.json");
+    std::string settingsPathNarrow(settingsPath.begin(), settingsPath.end());
+    JsonValue res = jsonParser->parseFromFile(settingsPathNarrow);
+    JsonObject obj = res.getObject();
+    appSettings.fontSize = static_cast<int>(obj.at("fontSize").getNumber());
+    appSettings.textBufferLength = static_cast<int>(obj.at("textBufferLength").getNumber());
+    appSettings.inactiveTimeout = static_cast<int>(obj.at("inactiveTimeout").getNumber());
+    appSettings.transparency = obj.at("transparency").getNumber();
+    appSettings.textColor = hexToRgb(std::wstring(obj.at("textColor").getString().begin(), obj.at("textColor").getString().end()), RGB(255, 255, 255));
+    appSettings.backgroundColor = hexToRgb(std::wstring(obj.at("backgroundColor").getString().begin(), obj.at("backgroundColor").getString().end()), RGB(0, 0, 0));
+    JsonObject windowPos = obj.at("windowPosition").getObject();
+    appSettings.windowPosition.first = static_cast<int>(windowPos.at("x").getNumber());
+    appSettings.windowPosition.second = static_cast<int>(windowPos.at("y").getNumber());
 }
 
 LRESULT CALLBACK SettingsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
