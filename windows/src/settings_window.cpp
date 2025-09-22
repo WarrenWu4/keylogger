@@ -39,7 +39,7 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
 
     FontProperties fontProperties = {
         L"JetBrains Mono",
-        12,
+        24,
         Gdiplus::FontStyleBold
     };
 
@@ -54,13 +54,15 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
         .setSize({root->getWidth(), 48});
     root->addChild(test);
 
-    // std::shared_ptr<Text> tt = std::make_shared<Text>();
-    // tt->setFont(font)
-    //     .setTextColor(Gdiplus::Color(0, 0, 0))
-    //     .setText(L"Test")
-    //     .setSize({test->getWidth(), 80});
-    // root->addChild(tt);
-    
+    std::shared_ptr<Text> title = std::make_shared<Text>();
+    title->setFontManager(fontManager)
+        .setFontProperties(fontProperties)
+        .setText(L"Settings")
+        .setTextColor(Gdiplus::Color(0, 0, 0))
+        .setPosition({0, 0})
+        .setSize({root->getWidth(), 48});
+    root->addChild(title);
+
     // std::shared_ptr<Text> transparencyLabel = std::make_shared<Text>();
     // transparencyLabel->setFont(font)
     //     .setText(L"Opacity")

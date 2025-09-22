@@ -17,9 +17,11 @@
 #include "system_tray.h"
 #include "font_manager.h"
 #include "settings_window.h"
+#include "gdiplus_context.h"
 
 #define IDT_INACTIVE_TIMER 1
 
+std::shared_ptr<GdiplusContext> gdiplusContext = nullptr;
 std::shared_ptr<KeyWindow> display = nullptr;
 std::shared_ptr<SystemTray> tray = nullptr;
 std::shared_ptr<FontManager> fontManager = nullptr;
@@ -28,7 +30,6 @@ std::shared_ptr<SettingsWindow> settingsWindow = nullptr;
 HHOOK hKeyboardHook = nullptr;
 std::wstring textBuffer = L"";
 const int maxTextBuffer = 20;
-ULONG_PTR gdiplusToken = 0;
 
 void cleanup() {
     if (hKeyboardHook) {
@@ -37,10 +38,6 @@ void cleanup() {
     }
     if (display) {
         KillTimer(display->getHwnd(), IDT_INACTIVE_TIMER);
-    }
-    if (gdiplusToken) {
-        Gdiplus::GdiplusShutdown(gdiplusToken);
-        gdiplusToken = 0;
     }
 }
 
@@ -123,11 +120,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
-    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-    if (Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL) != Gdiplus::Ok) {
-        MessageBox(NULL, L"Failed to initialize GDI+!", L"Error", MB_OK);
-        return 1;
-    }
+    gdiplusContext = std::make_shared<GdiplusContext>();
+    fontManager = std::make_shared<FontManager>();
 
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;
@@ -147,7 +141,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 1;
     }
 
-    fontManager = std::make_shared<FontManager>();
     display = std::make_shared<KeyWindow>(hInstance, fontManager);
     tray = std::make_shared<SystemTray>(hInstance, display->getHwnd());
     settingsWindow = std::make_shared<SettingsWindow>(hInstance, fontManager, display);

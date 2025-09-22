@@ -21,16 +21,22 @@ KeyWindow::KeyWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManag
     );
     GetClientRect(hwnd, &rect); // {0, 0, windowSize.x, windowSize.y}
     container->setBackgroundColor(Gdiplus::Color(0, 0, 0))
+        .setBorderColor(Gdiplus::Color(255, 0, 0))
+        .setBorderRadius(8)
         .setPosition({0, 0})
         .setSize({windowSize.x, windowSize.y});
-    // std::shared_ptr<Text> textElement = std::make_shared<Text>();
-    // std::shared_ptr<Gdiplus::Font> tempFont = fontManager->getFont(L"JetBrains Mono", 16);
-    // textElement->setFont(tempFont)
-    //     .setTextColor(Gdiplus::Color(255, 255, 255))
-    //     .setText(L"Testing")
-    //     .setPosition({0, 0})
-    //     .setSize({windowSize.x, windowSize.y});
-    // container->addChild(textElement);
+    std::shared_ptr<Text> textElement = std::make_shared<Text>();
+    textElement->setFontManager(fontManager)
+        .setFontProperties({
+            L"JetBrains Mono",
+            16,
+            Gdiplus::FontStyleBold
+        })
+        .setTextColor(Gdiplus::Color(255, 255, 255))
+        .setText(L"Testing")
+        .setPosition({0, 0})
+        .setSize({windowSize.x, windowSize.y});
+    container->addChild(textElement);
 }
 
 KeyWindow::~KeyWindow() {
@@ -46,16 +52,13 @@ HWND KeyWindow::getHwnd() {
 
 void KeyWindow::drawText(HDC hdc) {
     if (text.empty()) { return; }
+    COLORREF textColor = RGB(255, 255, 255);
+    SetTextColor(hdc, textColor);
+    SetBkColor(hdc, TRANSPARENT);
+    HFONT oldFont = (HFONT)SelectObject(hdc, font);
+    DrawTextW(hdc, this->text.c_str(), -1, &rect, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
+    SelectObject(hdc, oldFont);
     container->draw(hdc);
-    // COLORREF textColor = RGB(255, 255, 255);
-    // SetTextColor(hdc, textColor);
-    // SetBkColor(hdc, TRANSPARENT);
-    // HFONT oldFont = (HFONT)SelectObject(hdc, font);
-    // HBRUSH brush = CreateSolidBrush(rectColor);
-    // FillRect(hdc, &rect, brush);
-    // DrawTextW(hdc, this->text.c_str(), -1, &rect, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
-    // SelectObject(hdc, oldFont);
-    // DeleteObject(brush);
 }
 
 
