@@ -1,7 +1,8 @@
 #include "font_manager.h"
 
 FontManager::FontManager() {
-    Gdiplus::Status status = fontCollection.AddFontFile(L"resources/JetBrainsMono-Bold.ttf");
+    std::wstring fontPath = resourceFinder->getResource(L"JetBrainsMono-Bold.ttf");
+    Gdiplus::Status status = fontCollection.AddFontFile(fontPath.c_str());
     if (status != Gdiplus::Ok) {
         MessageBox(NULL, L"Failed to load fonts", L"Error", MB_OK);
         throw std::runtime_error("Failed to load fonts");
@@ -10,8 +11,7 @@ FontManager::FontManager() {
 
 std::shared_ptr<Gdiplus::Font> FontManager::createNewFont(int fontSize) {
     Gdiplus::FontFamily fontFamily(L"JetBrains Mono", &fontCollection);
-    Gdiplus::Font font(&fontFamily, fontSize, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
-    fonts[L"JetBrains Mono"][fontSize] = std::make_shared<Gdiplus::Font>(font);
+    fonts[L"JetBrains Mono"][fontSize] = std::make_shared<Gdiplus::Font>(&fontFamily, fontSize, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
     return fonts[L"JetBrains Mono"][fontSize];
 }
 

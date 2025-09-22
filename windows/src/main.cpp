@@ -147,7 +147,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
     display = std::make_shared<KeyWindow>(hInstance);
     tray = std::make_shared<SystemTray>(hInstance, display->getHwnd());
-    fontManager = std::make_shared<FontManager>(hInstance, display->getHwnd());
+    fontManager = std::make_shared<FontManager>();
     // display->setFont(fontManager->getFont(L"JetBrains Mono", 16));
     settingsWindow = std::make_shared<SettingsWindow>(hInstance, fontManager, display);
     ShowWindow(display->getHwnd(), SW_SHOW);

@@ -37,140 +37,147 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
         return;
     }
 
-    HFONT font = fontManager->getFont(L"JetBrains Mono", 12);
+    // Gdiplus::Ffont = fontManager->getFont(L"JetBrains Mono", 12);
 
     root->setSize({windowSize.first, windowSize.second})
         .setPosition({0, 0})
-        .setPadding({16, 16});
+        .setPadding({24, 24})
+        .setGap(16);
     
-    std::shared_ptr<TestElement> background = std::make_shared<TestElement>();
-    root->addChild(background);
-
-    std::shared_ptr<Text> transparencyLabel = std::make_shared<Text>();
-    transparencyLabel->setFont(font)
-        .setText(L"Opacity")
-        .setFontSize(12)
-        .setTextColor(RGB(0, 0, 0))
-        .setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
-    root->addChild(transparencyLabel);
-
-    std::shared_ptr<Slider> transparencySlider = std::make_shared<Slider>();
-    transparencySlider->setValue(0).setSize({200, 16}).setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
-    transparencySlider->getLabel().setText(L"0%").setFont(font).setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({transparencySlider->getRect().right + 6, transparencySlider->getPosition().y}).verticalCenterFromElement(transparencySlider);
-    transparencySlider->getTrack().setBackgroundColor(RGB(200, 200, 200)).setBorderRadius(4).setBorderWidth(0).setSize({200, 4}).setPosition(root->getPosition()).verticalCenterFromElement(transparencySlider);
-    transparencySlider->getThumb().setBackgroundColor(RGB(0, 0, 0)).setSize({16, 16}).setPosition({0, transparencySlider->getPosition().y});
-    root->addChild(transparencySlider);
-
-    std::shared_ptr<Text> ftl = std::make_shared<Text>();
-    ftl->setFont(font)
-        .setText(L"Font")
-        .setFontSize(12)
-        .setTextColor(RGB(0, 0, 0))
-        .setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
-    root->addChild(ftl);
-
-    std::shared_ptr<TextInput> fti = std::make_shared<TextInput>();
-    fti->setValidCharacters(L"0123456789")
-        .setSize({140, 32})
-        .setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
-    fti->getContainer()->setBackgroundColor(RGB(255, 255, 255))
-        .setBorderColor(RGB(0, 0, 0))
+    std::shared_ptr<Box> test = std::make_shared<Box>();
+    test->setBackgroundColor(Gdiplus::Color(240, 240, 240))
+        .setBorderColor(Gdiplus::Color(200, 200, 200))
         .setBorderRadius(8)
         .setBorderWidth(2)
-        .setSize({120, 36})
-        .setPosition(fti->getPosition());
-    fti->getLabel()->setFont(font)
-        .setText(std::to_wstring(appSettings.fontSize))
-        .setFontSize(12)
-        .setPosition({fti->getPosition().x + 8, fti->getPosition().y})
-        .verticalCenterFromElement(fti->getContainer());
-    fti->setOnSubmit([&, fti]() {
-        int newFontSize = std::stoi(fti->getLabel()->getText());
-        int clampedFontSize = std::clamp(newFontSize, 8, 40);
-        appSettings.fontSize = clampedFontSize;
-        HFONT font = this->fontManager->createNewFont(clampedFontSize);
-        this->display->setFont(font);
-        fti->getLabel()->setText(std::to_wstring(clampedFontSize));
-    });
-    root->addChild(fti);
+        .setSize({root->getWidth(), 48})
+        .setPosition({0, 0});
+    root->addChild(test);
+    
+    // std::shared_ptr<Text> transparencyLabel = std::make_shared<Text>();
+    // transparencyLabel->setFont(font)
+    //     .setText(L"Opacity")
+    //     .setFontSize(12)
+    //     .setTextColor(RGB(0, 0, 0))
+    //     .setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
+    // root->addChild(transparencyLabel);
 
-    std::shared_ptr<Text> bgcl = std::make_shared<Text>();
-    bgcl->setFont(font).setText(L"Background Color").setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
-    root->addChild(bgcl);
+    // std::shared_ptr<Slider> transparencySlider = std::make_shared<Slider>();
+    // transparencySlider->setValue(0).setSize({200, 16}).setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
+    // transparencySlider->getLabel().setText(L"0%").setFont(font).setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({transparencySlider->getRect().right + 6, transparencySlider->getPosition().y}).verticalCenterFromElement(transparencySlider);
+    // transparencySlider->getTrack().setBackgroundColor(RGB(200, 200, 200)).setBorderRadius(4).setBorderWidth(0).setSize({200, 4}).setPosition(root->getPosition()).verticalCenterFromElement(transparencySlider);
+    // transparencySlider->getThumb().setBackgroundColor(RGB(0, 0, 0)).setSize({16, 16}).setPosition({0, transparencySlider->getPosition().y});
+    // root->addChild(transparencySlider);
 
-    std::shared_ptr<TextInput> bgci = std::make_shared<TextInput>();
-    bgci->setValidCharacters(L"0123456789abcdefABCDEF")
-        .setMaxLength(7)
-        .setMinLength(1)
-        .setSize({140, 32})
-        .setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
-    bgci->getContainer()->setBackgroundColor(RGB(255, 255, 255))
-        .setBorderColor(RGB(0, 0, 0))
-        .setBorderRadius(8)
-        .setBorderWidth(2)
-        .setSize({120, 36})
-        .setPosition(bgci->getPosition());
-    bgci->getLabel()->setFont(font)
-        .setText(rgbToHex(appSettings.backgroundColor))
-        .setFontSize(12)
-        .verticalCenterFromElement(bgci->getContainer());
+    // std::shared_ptr<Text> ftl = std::make_shared<Text>();
+    // ftl->setFont(font)
+    //     .setText(L"Font")
+    //     .setFontSize(12)
+    //     .setTextColor(RGB(0, 0, 0))
+    //     .setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
+    // root->addChild(ftl);
 
-    std::shared_ptr<Box> bgcb = std::make_shared<Box>();
-    bgcb->setBackgroundColor(appSettings.backgroundColor)
-        .setBorderRadius(4)
-        .setBorderColor(RGB(0, 0, 0))
-        .setBorderWidth(2)
-        .setSize({16, 16})
-        .setPosition({bgci->getContainer()->getPosition().x + 8, 0})
-        .verticalCenterFromElement(bgci->getContainer());
-    bgci->getLabel()->setPosition({bgcb->getRect().right + 8, bgci->getLabel()->getPosition().y});
-    std::function<COLORREF(std::wstring, COLORREF)> hexToRgbFunc = std::bind(&SettingsWindow::hexToRgb, this, std::placeholders::_1, std::placeholders::_2);
-    std::function<std::wstring(COLORREF)> rgbToHexFunc = std::bind(&SettingsWindow::rgbToHex, this, std::placeholders::_1);
-    bgci->setOnSubmit([&, bgcb, bgci, hexToRgbFunc, rgbToHexFunc](){
-        COLORREF defaultColor = bgcb->getBackgroundColor();
-        std::wstring hexText = bgci->getLabel()->getText();
-        bgcb->setBackgroundColor(hexToRgbFunc(hexText, defaultColor));
-        appSettings.backgroundColor = bgcb->getBackgroundColor();
-        this->display->setBackgroundColor(appSettings.backgroundColor);
-        if (hexText.size() == 7 && hexText[0] == L'#') {
-            bgci->getLabel()->setText(hexText);
-        } else {
-            bgci->getLabel()->setText(rgbToHexFunc(defaultColor));
-        }
-    });
+    // std::shared_ptr<TextInput> fti = std::make_shared<TextInput>();
+    // fti->setValidCharacters(L"0123456789")
+    //     .setSize({140, 32})
+    //     .setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
+    // fti->getContainer()->setBackgroundColor(RGB(255, 255, 255))
+    //     .setBorderColor(RGB(0, 0, 0))
+    //     .setBorderRadius(8)
+    //     .setBorderWidth(2)
+    //     .setSize({120, 36})
+    //     .setPosition(fti->getPosition());
+    // fti->getLabel()->setFont(font)
+    //     .setText(std::to_wstring(appSettings.fontSize))
+    //     .setFontSize(12)
+    //     .setPosition({fti->getPosition().x + 8, fti->getPosition().y})
+    //     .verticalCenterFromElement(fti->getContainer());
+    // fti->setOnSubmit([&, fti]() {
+    //     int newFontSize = std::stoi(fti->getLabel()->getText());
+    //     int clampedFontSize = std::clamp(newFontSize, 8, 40);
+    //     appSettings.fontSize = clampedFontSize;
+    //     HFONT font = this->fontManager->createNewFont(clampedFontSize);
+    //     this->display->setFont(font);
+    //     fti->getLabel()->setText(std::to_wstring(clampedFontSize));
+    // });
+    // root->addChild(fti);
 
-    bgci->addChild(bgcb);
-    root->addChild(bgci);
+    // std::shared_ptr<Text> bgcl = std::make_shared<Text>();
+    // bgcl->setFont(font).setText(L"Background Color").setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
+    // root->addChild(bgcl);
 
-    std::shared_ptr<Text> fadeLabel = std::make_shared<Text>();
-    fadeLabel->setFont(font).setText(L"Fade Duration").setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
-    root->addChild(fadeLabel);
+    // std::shared_ptr<TextInput> bgci = std::make_shared<TextInput>();
+    // bgci->setValidCharacters(L"0123456789abcdefABCDEF")
+    //     .setMaxLength(7)
+    //     .setMinLength(1)
+    //     .setSize({140, 32})
+    //     .setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
+    // bgci->getContainer()->setBackgroundColor(RGB(255, 255, 255))
+    //     .setBorderColor(RGB(0, 0, 0))
+    //     .setBorderRadius(8)
+    //     .setBorderWidth(2)
+    //     .setSize({120, 36})
+    //     .setPosition(bgci->getPosition());
+    // bgci->getLabel()->setFont(font)
+    //     .setText(rgbToHex(appSettings.backgroundColor))
+    //     .setFontSize(12)
+    //     .verticalCenterFromElement(bgci->getContainer());
 
-    std::vector<std::wstring> fadeOptions = {L"1s", L"2s", L"3s", L"5s", L"10s", L"Never"};
-    std::shared_ptr<Dropdown> fadeDropdown = std::make_shared<Dropdown>();
-    fadeDropdown->setFont(font).setOptions(fadeOptions).setSelectedIndex(3).setSize({120, 32}).setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
-    fadeDropdown->getSelectedContainer()->setBackgroundColor(RGB(255, 255, 255)).setBorderColor(RGB(0, 0, 0)).setBorderRadius(8).setBorderWidth(2).setSize({120, 36}).setPosition(fadeDropdown->getPosition());
-    fadeDropdown->getSelectedText()->setFont(font).setFontSize(12).setTextColor(RGB(0, 0, 0)).centerFromElement(fadeDropdown->getSelectedContainer());
-    fadeDropdown->getOptionsContainer()->setBackgroundColor(RGB(255, 255, 255)).setBorderColor(RGB(0, 0, 0)).setBorderRadius(8).setBorderWidth(2).setSize({120, static_cast<int>(fadeOptions.size()) * 36}).setPosition({fadeDropdown->getPosition().x, fadeDropdown->getSelectedContainer()->getRect().bottom + 4});
-    root->addChild(fadeDropdown);
+    // std::shared_ptr<Box> bgcb = std::make_shared<Box>();
+    // bgcb->setBackgroundColor(appSettings.backgroundColor)
+    //     .setBorderRadius(4)
+    //     .setBorderColor(RGB(0, 0, 0))
+    //     .setBorderWidth(2)
+    //     .setSize({16, 16})
+    //     .setPosition({bgci->getContainer()->getPosition().x + 8, 0})
+    //     .verticalCenterFromElement(bgci->getContainer());
+    // bgci->getLabel()->setPosition({bgcb->getRect().right + 8, bgci->getLabel()->getPosition().y});
+    // std::function<COLORREF(std::wstring, COLORREF)> hexToRgbFunc = std::bind(&SettingsWindow::hexToRgb, this, std::placeholders::_1, std::placeholders::_2);
+    // std::function<std::wstring(COLORREF)> rgbToHexFunc = std::bind(&SettingsWindow::rgbToHex, this, std::placeholders::_1);
+    // bgci->setOnSubmit([&, bgcb, bgci, hexToRgbFunc, rgbToHexFunc](){
+    //     COLORREF defaultColor = bgcb->getBackgroundColor();
+    //     std::wstring hexText = bgci->getLabel()->getText();
+    //     bgcb->setBackgroundColor(hexToRgbFunc(hexText, defaultColor));
+    //     appSettings.backgroundColor = bgcb->getBackgroundColor();
+    //     this->display->setBackgroundColor(appSettings.backgroundColor);
+    //     if (hexText.size() == 7 && hexText[0] == L'#') {
+    //         bgci->getLabel()->setText(hexText);
+    //     } else {
+    //         bgci->getLabel()->setText(rgbToHexFunc(defaultColor));
+    //     }
+    // });
 
-    std::shared_ptr<Text> positionLabel = std::make_shared<Text>();
-    positionLabel->setFont(font)
-        .setText(L"Position")
-        .setFontSize(12)
-        .setTextColor(RGB(0, 0, 0))
-        .setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
-    root->addChild(positionLabel);
+    // bgci->addChild(bgcb);
+    // root->addChild(bgci);
 
-    std::shared_ptr<Text> positionDescription = std::make_shared<Text>();
-    positionDescription->setFont(fontManager->getFont(L"JetBrains Mono", 8))
-        .setText(L"To adjust position, click and drag the display. Position will be automatically saved between sessions.")
-        .setTextAlignment(DT_WORDBREAK | DT_LEFT)
-        .setFontSize(12)
-        .setTextColor(RGB(0, 0, 0));
-    positionDescription->setPosition({root->getPosition().x, root->getLastChildBottom() + 8})
-        .setSize({root->getSize().width, positionDescription->getSize().height*2});
-    root->addChild(positionDescription);
+    // std::shared_ptr<Text> fadeLabel = std::make_shared<Text>();
+    // fadeLabel->setFont(font).setText(L"Fade Duration").setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
+    // root->addChild(fadeLabel);
+
+    // std::vector<std::wstring> fadeOptions = {L"1s", L"2s", L"3s", L"5s", L"10s", L"Never"};
+    // std::shared_ptr<Dropdown> fadeDropdown = std::make_shared<Dropdown>();
+    // fadeDropdown->setFont(font).setOptions(fadeOptions).setSelectedIndex(3).setSize({120, 32}).setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
+    // fadeDropdown->getSelectedContainer()->setBackgroundColor(RGB(255, 255, 255)).setBorderColor(RGB(0, 0, 0)).setBorderRadius(8).setBorderWidth(2).setSize({120, 36}).setPosition(fadeDropdown->getPosition());
+    // fadeDropdown->getSelectedText()->setFont(font).setFontSize(12).setTextColor(RGB(0, 0, 0)).centerFromElement(fadeDropdown->getSelectedContainer());
+    // fadeDropdown->getOptionsContainer()->setBackgroundColor(RGB(255, 255, 255)).setBorderColor(RGB(0, 0, 0)).setBorderRadius(8).setBorderWidth(2).setSize({120, static_cast<int>(fadeOptions.size()) * 36}).setPosition({fadeDropdown->getPosition().x, fadeDropdown->getSelectedContainer()->getRect().bottom + 4});
+    // root->addChild(fadeDropdown);
+
+    // std::shared_ptr<Text> positionLabel = std::make_shared<Text>();
+    // positionLabel->setFont(font)
+    //     .setText(L"Position")
+    //     .setFontSize(12)
+    //     .setTextColor(RGB(0, 0, 0))
+    //     .setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
+    // root->addChild(positionLabel);
+
+    // std::shared_ptr<Text> positionDescription = std::make_shared<Text>();
+    // positionDescription->setFont(fontManager->getFont(L"JetBrains Mono", 8))
+    //     .setText(L"To adjust position, click and drag the display. Position will be automatically saved between sessions.")
+    //     .setTextAlignment(DT_WORDBREAK | DT_LEFT)
+    //     .setFontSize(12)
+    //     .setTextColor(RGB(0, 0, 0));
+    // positionDescription->setPosition({root->getPosition().x, root->getLastChildBottom() + 8})
+    //     .setSize({root->getSize().width, positionDescription->getSize().height*2});
+    // root->addChild(positionDescription);
 }
 
 COLORREF SettingsWindow::hexToRgb(std::wstring hex, COLORREF defaultColor) {
@@ -243,7 +250,7 @@ LRESULT CALLBACK SettingsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
         case WM_MOUSEMOVE:
         case WM_LBUTTONUP:
         case WM_LBUTTONDOWN: {
-            window->root->handlerStart(hwnd, uMsg, wParam, lParam);
+            window->root->handler(hwnd, uMsg, wParam, lParam);
             break;
         }
         case WM_PAINT: {
@@ -252,7 +259,7 @@ LRESULT CALLBACK SettingsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
             HBRUSH clearPaint = CreateSolidBrush(RGB(255, 255, 255));
             FillRect(hdc, &ps.rcPaint, clearPaint);
             DeleteObject(clearPaint);
-            window->root->drawStart(hdc);
+            window->root->draw(hdc);
             EndPaint(hwnd, &ps);
             break;
         }
