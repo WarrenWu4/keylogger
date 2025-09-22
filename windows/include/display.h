@@ -34,8 +34,13 @@ public:
     KeyWindow(HINSTANCE hInstance);
     ~KeyWindow();
 
+    bool dragging = false;
+    POINT dragOffset = {0, 0};
+
     HWND getHwnd();
     RECT* getRect();
     void setText(const std::wstring& newText);
     void drawText(HDC hdc);
+
+    void updateWindowPos(int x, int y);
 };

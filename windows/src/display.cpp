@@ -65,3 +65,9 @@ void KeyWindow::setText(std::wstring const& newText) {
 RECT* KeyWindow::getRect() {
     return static_cast<RECT*>(&rect);
 }
+
+void KeyWindow::updateWindowPos(int x, int y) {
+    windowOffset.x = x;
+    windowOffset.y = y;
+    MoveWindow(hwnd, windowOffset.x, windowOffset.y, boxEl->getSize().width, boxEl->getSize().height, TRUE);
+}

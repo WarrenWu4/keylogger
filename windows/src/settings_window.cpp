@@ -38,7 +38,7 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<KeyWindow> d
 
     FontProperties fontProperties = {
         L"JetBrains Mono",
-        24,
+        16,
         Gdiplus::FontStyleBold
     };
 
@@ -47,67 +47,37 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<KeyWindow> d
         .setPadding({24, 24})
         .setGap(16);
     
-    std::shared_ptr<Box> test = std::make_shared<Box>();
-    test->setBackgroundColor(Gdiplus::Color(240, 240, 240, 255))
+    std::shared_ptr<Text> ftl = std::make_shared<Text>();
+    ftl->setFontProperties(fontProperties)
+        .setText(L"Font")
+        .setTextColor(Gdiplus::Color(0, 0, 0))
+        .setSize({root->getSize().width, 24});
+    root->addChild(ftl);
+
+    std::shared_ptr<TextInput> fti = std::make_shared<TextInput>();
+    fti->setValidCharacters(L"0123456789")
+        .setSize({140, 32});
+
+    fti->getContainer()->setBackgroundColor(Gdiplus::Color(255, 255, 255))
+        .setBorderColor(Gdiplus::Color(0, 0, 0))
         .setBorderRadius(8)
-        .setSize({root->getWidth(), 48});
-    root->addChild(test);
+        .setBorderWidth(2)
+        .setSize({120, 36});
 
-    // std::shared_ptr<Text> title = std::make_shared<Text>();
-    // title->setFontProperties(fontProperties)
-    //     .setText(L"Settings")
-    //     .setTextColor(Gdiplus::Color(0, 0, 0))
-    //     .setPosition({0, 0})
-    //     .setSize({root->getWidth(), 48});
-    // root->addChild(title);
+    fti->getLabel()->setFontProperties(fontProperties)
+        .setText(std::to_wstring(appSettings.fontSize))
+        .setTextColor(Gdiplus::Color(0, 0, 0));
 
-    // std::shared_ptr<Text> transparencyLabel = std::make_shared<Text>();
-    // transparencyLabel->setFont(font)
-    //     .setText(L"Opacity")
-    //     .setFontSize(12)
-    //     .setTextColor(RGB(0, 0, 0))
-    //     .setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
-    // root->addChild(transparencyLabel);
-
-    // std::shared_ptr<Slider> transparencySlider = std::make_shared<Slider>();
-    // transparencySlider->setValue(0).setSize({200, 16}).setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
-    // transparencySlider->getLabel().setText(L"0%").setFont(font).setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({transparencySlider->getRect().right + 6, transparencySlider->getPosition().y}).verticalCenterFromElement(transparencySlider);
-    // transparencySlider->getTrack().setBackgroundColor(RGB(200, 200, 200)).setBorderRadius(4).setBorderWidth(0).setSize({200, 4}).setPosition(root->getPosition()).verticalCenterFromElement(transparencySlider);
-    // transparencySlider->getThumb().setBackgroundColor(RGB(0, 0, 0)).setSize({16, 16}).setPosition({0, transparencySlider->getPosition().y});
-    // root->addChild(transparencySlider);
-
-    // std::shared_ptr<Text> ftl = std::make_shared<Text>();
-    // ftl->setFont(font)
-    //     .setText(L"Font")
-    //     .setFontSize(12)
-    //     .setTextColor(RGB(0, 0, 0))
-    //     .setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
-    // root->addChild(ftl);
-
-    // std::shared_ptr<TextInput> fti = std::make_shared<TextInput>();
-    // fti->setValidCharacters(L"0123456789")
-    //     .setSize({140, 32})
-    //     .setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
-    // fti->getContainer()->setBackgroundColor(RGB(255, 255, 255))
-    //     .setBorderColor(RGB(0, 0, 0))
-    //     .setBorderRadius(8)
-    //     .setBorderWidth(2)
-    //     .setSize({120, 36})
-    //     .setPosition(fti->getPosition());
-    // fti->getLabel()->setFont(font)
-    //     .setText(std::to_wstring(appSettings.fontSize))
-    //     .setFontSize(12)
-    //     .setPosition({fti->getPosition().x + 8, fti->getPosition().y})
-    //     .verticalCenterFromElement(fti->getContainer());
-    // fti->setOnSubmit([&, fti]() {
-    //     int newFontSize = std::stoi(fti->getLabel()->getText());
-    //     int clampedFontSize = std::clamp(newFontSize, 8, 40);
-    //     appSettings.fontSize = clampedFontSize;
-    //     HFONT font = this->fontManager->createNewFont(clampedFontSize);
-    //     this->display->setFont(font);
-    //     fti->getLabel()->setText(std::to_wstring(clampedFontSize));
-    // });
-    // root->addChild(fti);
+    fti->setOnSubmit([&, fti]() {
+        int newFontSize = std::stoi(fti->getLabel()->getText());
+        int clampedFontSize = std::clamp(newFontSize, 8, 40);
+        appSettings.fontSize = clampedFontSize;
+        // TODO: add display update function
+        fti->getLabel()->setText(std::to_wstring(clampedFontSize));
+    });
+    root->addChild(fti);
+    fti->getContainer()->centerFromElement(fti);
+    fti->getLabel()->centerFromElement(fti->getContainer());
 
     // std::shared_ptr<Text> bgcl = std::make_shared<Text>();
     // bgcl->setFont(font).setText(L"Background Color").setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({root->getPosition().x, root->getLastChildBottom() + 20});

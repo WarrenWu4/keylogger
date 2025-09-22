@@ -79,8 +79,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             GetCursorPos(&cursorPos);
             ScreenToClient(display->getHwnd(), &cursorPos);
             if (PtInRect(display->getRect(), cursorPos)) {
+                display->dragging = true;
+                SetCapture(display->getHwnd());
+            }
+            break;
+        }
+        case WM_MOUSEMOVE: {
+            if (display->dragging) {
+                POINT cursorPos;
+                GetCursorPos(&cursorPos);
+                display->updateWindowPos(cursorPos.x, cursorPos.y);
+            }
+            break;
+        }
+        case WM_LBUTTONUP: {
+            if (display->dragging) {
+                display->dragging = false;
                 ReleaseCapture();
-                SendMessage(display->getHwnd(), WM_NCLBUTTONDOWN, HTCAPTION, 0);
             }
             break;
         }
