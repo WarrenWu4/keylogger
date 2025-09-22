@@ -1,8 +1,7 @@
 #include "settings_window.h"
 
-SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager, std::shared_ptr<KeyWindow> display) {
+SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<KeyWindow> display) {
     loadSettings();
-    this->fontManager = fontManager;
     this->display = display;
     INITCOMMONCONTROLSEX icex;
     icex.dwSize = sizeof(icex);
@@ -54,14 +53,13 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
         .setSize({root->getWidth(), 48});
     root->addChild(test);
 
-    std::shared_ptr<Text> title = std::make_shared<Text>();
-    title->setFontManager(fontManager)
-        .setFontProperties(fontProperties)
-        .setText(L"Settings")
-        .setTextColor(Gdiplus::Color(0, 0, 0))
-        .setPosition({0, 0})
-        .setSize({root->getWidth(), 48});
-    root->addChild(title);
+    // std::shared_ptr<Text> title = std::make_shared<Text>();
+    // title->setFontProperties(fontProperties)
+    //     .setText(L"Settings")
+    //     .setTextColor(Gdiplus::Color(0, 0, 0))
+    //     .setPosition({0, 0})
+    //     .setSize({root->getWidth(), 48});
+    // root->addChild(title);
 
     // std::shared_ptr<Text> transparencyLabel = std::make_shared<Text>();
     // transparencyLabel->setFont(font)

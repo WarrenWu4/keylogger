@@ -1,8 +1,6 @@
 #include "display.h"
-#include <winuser.h>
 
-KeyWindow::KeyWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager) {
-    this->fontManager = fontManager;
+KeyWindow::KeyWindow(HINSTANCE hInstance) {
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
     windowSize = {450, 40};
@@ -26,8 +24,7 @@ KeyWindow::KeyWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManag
         .setPosition({0, 0})
         .setSize({windowSize.x, windowSize.y});
     std::shared_ptr<Text> textElement = std::make_shared<Text>();
-    textElement->setFontManager(fontManager)
-        .setFontProperties({
+    textElement->setFontProperties({
             L"JetBrains Mono",
             16,
             Gdiplus::FontStyleBold
@@ -52,12 +49,12 @@ HWND KeyWindow::getHwnd() {
 
 void KeyWindow::drawText(HDC hdc) {
     if (text.empty()) { return; }
-    COLORREF textColor = RGB(255, 255, 255);
-    SetTextColor(hdc, textColor);
-    SetBkColor(hdc, TRANSPARENT);
-    HFONT oldFont = (HFONT)SelectObject(hdc, font);
-    DrawTextW(hdc, this->text.c_str(), -1, &rect, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
-    SelectObject(hdc, oldFont);
+    // COLORREF textColor = RGB(255, 255, 255);
+    // SetTextColor(hdc, textColor);
+    // SetBkColor(hdc, TRANSPARENT);
+    // HFONT oldFont = (HFONT)SelectObject(hdc, font);
+    // DrawTextW(hdc, this->text.c_str(), -1, &rect, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
+    // SelectObject(hdc, oldFont);
     container->draw(hdc);
 }
 

@@ -35,19 +35,18 @@ private:
 
     std::shared_ptr<ResourceFinder> resourceFinder = std::make_shared<ResourceFinder>();
     std::shared_ptr<Json> jsonParser = std::make_shared<Json>();
-    std::shared_ptr<FontManager> fontManager = nullptr;
     std::shared_ptr<KeyWindow> display = nullptr;
 
     void loadSettings();
     void saveSettings();
-    void updateSettings(const std::function<void(Settings&)>& appSettings) { updateSettings(appSettings); saveSettings(); }
+    // void updateSettings(const std::function<void(Settings&)>& appSettings) { updateSettings(appSettings); saveSettings(); }
     
     COLORREF hexToRgb(std::wstring hex, COLORREF defaultColor = RGB(0, 0, 0));
     std::wstring rgbToHex(COLORREF color);
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
-    SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager, std::shared_ptr<KeyWindow> display);
+    SettingsWindow(HINSTANCE hInstance, std::shared_ptr<KeyWindow> display);
     ~SettingsWindow();
     Settings getSettings() { return appSettings; }
     HWND GetHwnd() { return hwnd; }

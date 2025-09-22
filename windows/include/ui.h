@@ -138,18 +138,17 @@ public:
 class Text : public Element {
 private:
     std::wstring text = L"";
-    std::shared_ptr<FontManager> fontManager = nullptr;
     FontProperties fontProperties;
     Gdiplus::Color textColor = Gdiplus::Color(0, 0, 0, 255);
     std::shared_ptr<Gdiplus::StringFormat> alignment = std::make_shared<Gdiplus::StringFormat>(
         Gdiplus::StringFormat::GenericDefault()
     );
 
+    std::unique_ptr<FontManager> fontManager = std::make_unique<FontManager>();
+
 public:
     std::wstring getText() { return text; }
     Text& setText(std::wstring newText) { text = newText; return *this; }
-
-    Text& setFontManager(std::shared_ptr<FontManager> newFontManager) { fontManager = newFontManager; return *this; }
 
     FontProperties getFontProperties() { return fontProperties; }
     Text& setFontProperties(FontProperties newFontProperties) { fontProperties = newFontProperties; return *this; }
@@ -161,7 +160,6 @@ public:
     Text& setTextAlignment(std::shared_ptr<Gdiplus::StringFormat> newAlignment) { alignment = newAlignment; return *this; }
 
     void draw(HDC hdc) override {
-        assert(fontManager != nullptr);
         Gdiplus::Graphics graphics(hdc);
         graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
 
@@ -173,15 +171,7 @@ public:
             (float)this->getRect().Height
         );
 
-        Gdiplus::FontFamily fontFamily(fontProperties.fontFamily.c_str(), &fontManager->getFontCollection());
-        Gdiplus::Font font(
-            &fontFamily,
-            fontProperties.fontSize,
-            fontProperties.fontStyle,
-            Gdiplus::UnitPixel
-        );
-
-        graphics.DrawString(text.c_str(), -1, &font, rectFloat, alignment.get(), &textBrush);
+        graphics.DrawString(text.c_str(), -1, fontManager->getFont(fontProperties).get(), rectFloat, alignment.get(), &textBrush);
 
         drawChildren(hdc);
     }

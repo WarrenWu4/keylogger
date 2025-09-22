@@ -6,6 +6,7 @@
 #include <string>
 #include <deque>
 #include <stdexcept>
+#include <winuser.h>
 
 #include "logging.h"
 #include "ui.h"
@@ -30,11 +31,11 @@ private:
     COLORREF backgroundColor = RGB(0, 0, 0);
     COLORREF rectColor = RGB(255, 0, 0);
 
-    std::shared_ptr<FontManager> fontManager;
+    std::unique_ptr<FontManager> fontManager = std::make_unique<FontManager>();
     FontProperties fontProperties;
 
 public:
-    KeyWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager);
+    KeyWindow(HINSTANCE hInstance);
     ~KeyWindow();
     HWND getHwnd();
     RECT* getRect();
