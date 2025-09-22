@@ -42,6 +42,9 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
     root->setSize({windowSize.first, windowSize.second})
         .setPosition({0, 0})
         .setPadding({16, 16});
+    
+    std::shared_ptr<TestElement> background = std::make_shared<TestElement>();
+    root->addChild(background);
 
     std::shared_ptr<Text> transparencyLabel = std::make_shared<Text>();
     transparencyLabel->setFont(font)

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <windows.h>
+#include <gdiplus.h>
 #include <vector>
 #include <memory>
 #include <iostream>
@@ -24,51 +25,46 @@ namespace UI {
     };
 }
 
-// * might be able to reduce data storage
-// * by only using RECT since other structs can be derived
-// * but this is easier to understand
 class Element {
 private:
-    RECT rect = {0, 0, 0, 0};
+    Gdiplus::Rect rect = Gdiplus::Rect(0, 0, 0, 0);
     std::vector<std::shared_ptr<Element>> children;
-    UI::POSITION position = {0, 0};
-    UI::SIZE size = {0, 0};
+    UI::FLEXDIRECTION direction = UI::VERTICAL;
     UI::PADDING padding = {0, 0};
+    size_t gap = 0;
 
-    void syncRect() {
-        rect.left = position.x;
-        rect.top = position.y;
-        rect.right = position.x + size.width;
-        rect.bottom = position.y + size.height;
+    void drawChildren(HDC hdc) {
+        for (size_t i = 0; i < children.size(); i++) {
+            // adjust child position relative to parent rect
+            Gdiplus::Rect childRect = children.at(i)->getRect();
+            childRect.X += rect.X + padding.x;
+            childRect.Y += rect.Y + padding.y;
+            if (direction == UI::HORIZONTAL) { childRect.X += i * gap; }
+            else { childRect.Y += i * gap; }
+            children.at(i)->setRect(childRect);
+            children.at(i)->draw(hdc);
+        }
     }
+
+    void handleChildren(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+        for (size_t i = 0; i < children.size(); i++) {
+            children.at(i)->handler(hwnd, msg, wParam, lParam);
+        }
+    }
+
 public:
-    virtual void draw(HDC hdc) {};
-    virtual void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {};
-    virtual void drawStart(HDC hdc) {
-        draw(hdc);
-        for (size_t i = 0; i < children.size(); i++) {
-            children[i]->drawStart(hdc);
-        }
-    }
-    virtual void handlerStart(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-        handler(hwnd, msg, wParam, lParam);
-        for (size_t i = 0; i < children.size(); i++) {
-            children[i]->handlerStart(hwnd, msg, wParam, lParam);
-        }
-    }
-    RECT getRect() { return rect; }
-    Element& setRect(RECT newRect) {
-        rect = newRect; 
-        position = {rect.left, rect.top};
-        size = {rect.right - rect.left, rect.bottom - rect.top};
-        return *this;
-    }
+    virtual void draw(HDC hdc) { drawChildren(hdc); }
+    virtual void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) { handleChildren(hwnd, msg, wParam, lParam); }
+
+    Gdiplus::Rect getRect() { return rect; }
+    Element& setRect(Gdiplus::Rect newRect) { rect = newRect; return *this; }
+    Element& setPosition(UI::POSITION newPosition) { rect.X = newPosition.x; rect.Y = newPosition.y; return *this; }
+    Element& setSize(UI::SIZE newSize) { rect.Width = newSize.width; rect.Height = newSize.height; return *this; }
+    Element& setDirection(UI::FLEXDIRECTION newDirection) { direction = newDirection; return *this; }
+    Element& setPadding(UI::PADDING newPadding) { padding = newPadding; return *this; }
+    Element& setGap(size_t newGap) { gap = newGap; return *this; }
+
     std::vector<std::shared_ptr<Element>>& getChildren() { return children; }
-    int getLastChildBottom() {
-        if (children.size() == 0) { return 0; }
-        RECT lastChildRect = children.back()->getRect();
-        return lastChildRect.bottom;
-    }
     Element& addChild(const std::shared_ptr<Element>& newChild) { children.push_back(newChild); return *this; }
     Element& removeChild(size_t childIndex) { 
         if (childIndex >= 0 && childIndex < children.size()) {
@@ -76,82 +72,53 @@ public:
         }
         return *this; 
     }
-    UI::POSITION getPosition() { return position; }
-    Element& setPosition(UI::POSITION newPosition) { 
-        position = newPosition; 
-        syncRect();
-        return *this; 
+
+    Element& centerVerticalFromElement(std::shared_ptr<Element> parent) {
+        rect.Y = parent->getRect().Y + (parent->getRect().Height - rect.Height) / 2;
+        return *this;
     }
-    UI::SIZE getSize() { return size; }
-    Element& setSize(UI::SIZE newSize) { 
-        size = newSize; 
-        syncRect();
-        return *this; 
+    Element& centerHorizontalFromElement(std::shared_ptr<Element> parent) {
+        rect.X = parent->getRect().X + (parent->getRect().Width - rect.Width) / 2;
+        return *this;
     }
-    UI::PADDING getPadding() { return padding; }
-    Element& setPadding(UI::PADDING newPadding) { 
-        padding = newPadding; 
-        this->setPosition({
-            position.x + padding.x,
-            position.y + padding.y
-        });
-        this->setSize({
-            // ! x3 to account for padding position change
-            size.width - padding.x * 3,
-            size.height - padding.y * 3
-        });
-        return *this; 
-    }
-    void horizontalCenterFromElement(std::shared_ptr<Element> element) {
-        if (element == nullptr) { return; }
-        UI::POSITION elPosition = element->getPosition();
-        UI::SIZE elSize = element->getSize();
-        this->setPosition({
-            (elPosition.x + elSize.width/2) - (size.width) / 2,
-            position.y
-        });
-    }
-    void verticalCenterFromElement(std::shared_ptr<Element> element) {
-        if (element == nullptr) { return; }
-        UI::POSITION elPosition = element->getPosition();
-        UI::SIZE elSize = element->getSize();
-        this->setPosition({
-            position.x,
-            (elPosition.y + elSize.height/2) - (size.height) / 2
-        });
-    }
-    void centerFromElement(std::shared_ptr<Element> element) {
-        horizontalCenterFromElement(element);
-        verticalCenterFromElement(element);
+    Element& centerFromElement(std::shared_ptr<Element> parent) {
+        centerVerticalFromElement(parent);
+        centerHorizontalFromElement(parent);
+        return *this;
     }
 };
 
 class Box : public Element {
 private:
-    COLORREF backgroundColor = TRANSPARENT;
-    COLORREF borderColor = TRANSPARENT;
+    Gdiplus::Color backgroundColor = Gdiplus::Color(0, 0, 0, 0);
+    Gdiplus::Color borderColor = Gdiplus::Color(0, 0, 0, 0);
     int borderRadius = 0;
     int borderWidth = 0;
 public:
-    COLORREF getBackgroundColor() { return backgroundColor; }
-    COLORREF getBorderColor() { return borderColor; }
+    Gdiplus::Color getBackgroundColor() { return backgroundColor; }
+    Gdiplus::Color getBorderColor() { return borderColor; }
     int getBorderRadius() { return borderRadius; }
     int getBorderWidth() { return borderWidth; }
-    Box& setBackgroundColor(COLORREF newBackgroundColor) { backgroundColor = newBackgroundColor; return *this; }
-    Box& setBorderColor(COLORREF newBorderColor) { borderColor = newBorderColor; return *this; }
+    Box& setBackgroundColor(Gdiplus::Color newBackgroundColor) { backgroundColor = newBackgroundColor; return *this; }
+    Box& setBorderColor(Gdiplus::Color newBorderColor) { borderColor = newBorderColor; return *this; }
     Box& setBorderRadius(int newBorderRadius) { borderRadius = newBorderRadius; return *this; }
     Box& setBorderWidth(int newBorderWidth) { borderWidth = newBorderWidth; return *this; }
     void draw(HDC hdc) override {
-        HBRUSH background = CreateSolidBrush(backgroundColor);
-        HPEN border = CreatePen(PS_SOLID, borderWidth, borderColor);
-        HGDIOBJ oldBackground = SelectObject(hdc, background);
-        HGDIOBJ oldBorder = SelectObject(hdc, border);
-        RECT rect = this->getRect();
-        RoundRect(hdc, rect.left, rect.top, rect.right, rect.bottom, borderRadius, borderRadius);
-        SelectObject(hdc, oldBackground);
-        SelectObject(hdc, oldBorder);
-        DeleteObject(background);
-        DeleteObject(border);
+        Gdiplus::Graphics graphics(hdc);
+        graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+
+        Gdiplus::Rect rect = this->getRect();
+        Gdiplus::SolidBrush backgroundBrush(backgroundColor);
+        Gdiplus::Pen borderPen(borderColor, borderWidth);
+
+        Gdiplus::GraphicsPath path;
+        path.AddArc(rect.X, rect.Y, borderRadius * 2, borderRadius * 2, 180, 90);
+        path.AddArc(rect.X + rect.Width - borderRadius * 2, rect.Y, borderRadius * 2, borderRadius * 2, 270, 90);
+        path.AddArc(rect.X + rect.Width - borderRadius * 2, rect.Y + rect.Height - borderRadius * 2, borderRadius * 2, borderRadius * 2, 0, 90);
+        path.AddArc(rect.X, rect.Y + rect.Height - borderRadius * 2, borderRadius * 2, borderRadius * 2, 90, 90);
+        path.CloseFigure();
+        graphics.FillPath(&backgroundBrush, &path);
+        graphics.DrawPath(&borderPen, &path);
     }
 };
 

@@ -2,6 +2,7 @@
 
 #include <utility>
 #include <windows.h>
+#include <gdiplus.h>
 #include <string>
 #include <deque>
 #include <stdexcept>

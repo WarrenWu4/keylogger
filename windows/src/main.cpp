@@ -7,6 +7,7 @@
 #include <initguid.h>
 #include <devguid.h>
 #include <setupapi.h>
+#include <gdiplus.h>
 #include <vector>
 #include <utility>
 #include <queue>
@@ -28,7 +29,10 @@ HHOOK hKeyboardHook = nullptr;
 std::wstring textBuffer = L"";
 const int maxTextBuffer = 20;
 
+ULONG_PTR gdiplusToken;
+
 void cleanup() {
+    Gdiplus::GdiplusShutdown(gdiplusToken);
     if (hKeyboardHook) {
         UnhookWindowsHookEx(hKeyboardHook);
         hKeyboardHook = nullptr;
@@ -117,6 +121,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
+    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+    if (Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL) != Gdiplus::Ok) {
+        MessageBox(NULL, L"Failed to initialize GDI+!", L"Error", MB_OK);
+        return 1;
+    }
+
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
@@ -138,7 +148,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     display = std::make_shared<KeyWindow>(hInstance);
     tray = std::make_shared<SystemTray>(hInstance, display->getHwnd());
     fontManager = std::make_shared<FontManager>(hInstance, display->getHwnd());
-    display->setFont(fontManager->getFont(L"JetBrains Mono", 16));
+    // display->setFont(fontManager->getFont(L"JetBrains Mono", 16));
     settingsWindow = std::make_shared<SettingsWindow>(hInstance, fontManager, display);
     ShowWindow(display->getHwnd(), SW_SHOW);
 
