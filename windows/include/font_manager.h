@@ -8,13 +8,19 @@
 #include <memory>
 #include "resource_finder.h"
 
+struct FontProperties {
+    std::wstring fontFamily = L"JetBrains Mono";
+    int fontSize = 12;
+    Gdiplus::FontStyle fontStyle = Gdiplus::FontStyleBold;
+};
+
 class FontManager {
 private:
-    Gdiplus::PrivateFontCollection fontCollection;
-    std::unordered_map<std::wstring, std::unordered_map<int, std::shared_ptr<Gdiplus::Font>>> fonts;
     std::shared_ptr<ResourceFinder> resourceFinder = std::make_shared<ResourceFinder>();
+    Gdiplus::PrivateFontCollection fontCollection;
+    FontProperties fontProperties = FontProperties();
 public:
     FontManager();
-    std::shared_ptr<Gdiplus::Font> getFont(std::wstring fontName, int fontSize);
-    std::shared_ptr<Gdiplus::Font> createNewFont(int fontSize);
+    Gdiplus::PrivateFontCollection& getFontCollection() { return fontCollection; }
+    FontProperties getFontProperties() { return fontProperties; }
 };

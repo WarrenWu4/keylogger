@@ -7,6 +7,7 @@
 #include <memory>
 #include <iostream>
 #include <algorithm>
+#include <cassert>
 #include "font_manager.h"
 
 namespace UI {
@@ -35,13 +36,20 @@ private:
 
 protected:
     void drawChildren(HDC hdc) {
+        size_t initialPos = 0;
         for (size_t i = 0; i < children.size(); i++) {
             // adjust child position relative to parent rect
             Gdiplus::Rect childRect = children.at(i)->getRect();
             childRect.X += rect.X + padding.x;
             childRect.Y += rect.Y + padding.y;
-            if (direction == UI::HORIZONTAL) { childRect.X += i * gap; }
-            else { childRect.Y += i * gap; }
+            if (direction == UI::HORIZONTAL) { 
+                childRect.X += i * gap + initialPos; 
+                initialPos = childRect.X + childRect.Width;
+            }
+            else { 
+                childRect.Y += i * gap + initialPos; 
+                initialPos = childRect.Y + childRect.Height;
+            }
             children.at(i)->setRect(childRect);
             children.at(i)->draw(hdc);
         }
@@ -121,25 +129,27 @@ public:
         path.AddArc(rect.X, rect.Y + rect.Height - borderRadius * 2, borderRadius * 2, borderRadius * 2, 90, 90);
         path.CloseFigure();
         graphics.FillPath(&backgroundBrush, &path);
-        graphics.DrawPath(&borderPen, &path);
+        if (borderWidth > 0) { graphics.DrawPath(&borderPen, &path); }
 
-        this->drawChildren(hdc);
+        drawChildren(hdc);
     }
 };
 
 class Text : public Element {
 private:
     std::wstring text = L"";
-    std::shared_ptr<Gdiplus::Font> font = nullptr;
+    FontProperties fontProperties;
     Gdiplus::Color textColor = Gdiplus::Color(0, 0, 0, 255);
-    std::shared_ptr<Gdiplus::StringFormat> alignment = nullptr;
+    std::shared_ptr<Gdiplus::StringFormat> alignment = std::make_shared<Gdiplus::StringFormat>(
+        Gdiplus::StringFormat::GenericDefault()
+    );
 
 public:
     std::wstring getText() { return text; }
     Text& setText(std::wstring newText) { text = newText; return *this; }
 
-    std::shared_ptr<Gdiplus::Font> getFont() { return font; }
-    Text& setFont(std::shared_ptr<Gdiplus::Font> newFont) { font = newFont; return *this; }
+    FontProperties getFontProperties() { return fontProperties; }
+    Text& setFontProperties(FontProperties newFontProperties) { fontProperties = newFontProperties; return *this; }
 
     Gdiplus::Color getTextColor() { return textColor; }
     Text& setTextColor(Gdiplus::Color newTextColor) { textColor = newTextColor; return *this; }
@@ -152,19 +162,24 @@ public:
         graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
 
         Gdiplus::SolidBrush textBrush(textColor);
-        Gdiplus::PointF textPosition((float)this->getRect().X, (float)this->getRect().Y);
-        Gdiplus::StringFormat stringFormat = Gdiplus::StringFormat::GenericDefault();
+        Gdiplus::RectF rectFloat(
+            (float)this->getRect().X,
+            (float)this->getRect().Y,
+            (float)this->getRect().Width,
+            (float)this->getRect().Height
+        );
 
-        // if (backgroundColor == TRANSPARENT) {
-        //     SetBkMode(hdc, TRANSPARENT);
-        // } else {
-        //     SetBkColor(hdc, backgroundColor);
-        // }
-        // SetTextColor(hdc, textColor);
-        // HFONT oldFont = (HFONT)SelectObject(hdc, font);
-        // RECT rect = this->getRect();
-        // DrawTextW(hdc, text.c_str(), -1, &rect, textAlignment);
-        // SelectObject(hdc, oldFont);
+        Gdiplus::FontFamily fontFamily(fontProperties.fontFamily.c_str());
+        Gdiplus::Font font(
+            &fontFamily,
+            fontProperties.fontSize,
+            fontProperties.fontStyle,
+            Gdiplus::UnitPixel
+        );
+
+        graphics.DrawString(text.c_str(), -1, &font, rectFloat, alignment.get(), &textBrush);
+
+        drawChildren(hdc);
     }
 };
 

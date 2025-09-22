@@ -37,7 +37,11 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
         return;
     }
 
-    // Gdiplus::Ffont = fontManager->getFont(L"JetBrains Mono", 12);
+    FontProperties fontProperties = {
+        L"JetBrains Mono",
+        12,
+        Gdiplus::FontStyleBold
+    };
 
     root->setSize({windowSize.first, windowSize.second})
         .setPosition({0, 0})
@@ -45,13 +49,17 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<FontManager>
         .setGap(16);
     
     std::shared_ptr<Box> test = std::make_shared<Box>();
-    test->setBackgroundColor(Gdiplus::Color(240, 240, 240))
-        .setBorderColor(Gdiplus::Color(200, 200, 200))
+    test->setBackgroundColor(Gdiplus::Color(240, 240, 240, 255))
         .setBorderRadius(8)
-        .setBorderWidth(2)
-        .setSize({root->getWidth(), 48})
-        .setPosition({0, 0});
+        .setSize({root->getWidth(), 48});
     root->addChild(test);
+
+    // std::shared_ptr<Text> tt = std::make_shared<Text>();
+    // tt->setFont(font)
+    //     .setTextColor(Gdiplus::Color(0, 0, 0))
+    //     .setText(L"Test")
+    //     .setSize({test->getWidth(), 80});
+    // root->addChild(tt);
     
     // std::shared_ptr<Text> transparencyLabel = std::make_shared<Text>();
     // transparencyLabel->setFont(font)

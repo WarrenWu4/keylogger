@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 #include "logging.h"
+#include "ui.h"
 
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
@@ -19,6 +20,8 @@ private:
     POINT padding = {6, 4};
     std::wstring text = L"";
 
+    std::shared_ptr<Box> container = std::make_shared<Box>();
+
     POINT windowSize = {0, 0};
     POINT windowOffset = {0, 0};
     double transparency = 1.0;
@@ -27,8 +30,11 @@ private:
     COLORREF backgroundColor = RGB(0, 0, 0);
     COLORREF rectColor = RGB(255, 0, 0);
 
+    std::shared_ptr<FontManager> fontManager;
+    FontProperties fontProperties;
+
 public:
-    KeyWindow(HINSTANCE hInstance);
+    KeyWindow(HINSTANCE hInstance, std::shared_ptr<FontManager> fontManager);
     ~KeyWindow();
     HWND getHwnd();
     RECT* getRect();

@@ -28,17 +28,19 @@ std::shared_ptr<SettingsWindow> settingsWindow = nullptr;
 HHOOK hKeyboardHook = nullptr;
 std::wstring textBuffer = L"";
 const int maxTextBuffer = 20;
-
-ULONG_PTR gdiplusToken;
+ULONG_PTR gdiplusToken = 0;
 
 void cleanup() {
-    Gdiplus::GdiplusShutdown(gdiplusToken);
     if (hKeyboardHook) {
         UnhookWindowsHookEx(hKeyboardHook);
         hKeyboardHook = nullptr;
     }
     if (display) {
         KillTimer(display->getHwnd(), IDT_INACTIVE_TIMER);
+    }
+    if (gdiplusToken) {
+        Gdiplus::GdiplusShutdown(gdiplusToken);
+        gdiplusToken = 0;
     }
 }
 
@@ -145,10 +147,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 1;
     }
 
-    display = std::make_shared<KeyWindow>(hInstance);
-    tray = std::make_shared<SystemTray>(hInstance, display->getHwnd());
     fontManager = std::make_shared<FontManager>();
-    // display->setFont(fontManager->getFont(L"JetBrains Mono", 16));
+    display = std::make_shared<KeyWindow>(hInstance, fontManager);
+    tray = std::make_shared<SystemTray>(hInstance, display->getHwnd());
     settingsWindow = std::make_shared<SettingsWindow>(hInstance, fontManager, display);
     ShowWindow(display->getHwnd(), SW_SHOW);
 
