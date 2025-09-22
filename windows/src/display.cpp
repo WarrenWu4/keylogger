@@ -21,7 +21,7 @@ KeyWindow::KeyWindow(HINSTANCE hInstance) {
     GetClientRect(hwnd, &rect); // {0, 0, windowSize.x, windowSize.y}
 
     boxEl->setBackgroundColor(Gdiplus::Color(0, 0, 0))
-        .setPosition({0, 0})
+        .setPadding({8, 8})
         .setSize({windowSize.x, windowSize.y});
 
     fontProperties = {
@@ -49,9 +49,12 @@ HWND KeyWindow::getHwnd() {
 }
 
 void KeyWindow::drawText(HDC hdc) {
+    // TODO: seems like this seems very expensive, maybe find a better optimization later
     if (text.empty()) { return; }
     textEl->setText(this->text);
+    boxEl->fitToChildren();
     boxEl->draw(hdc);
+    MoveWindow(hwnd, windowOffset.x, windowOffset.y, boxEl->getSize().width, boxEl->getSize().height, TRUE);
 }
 
 

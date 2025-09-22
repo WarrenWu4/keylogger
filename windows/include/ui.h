@@ -8,6 +8,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include "font_manager.h"
 
 namespace UI {
@@ -36,21 +37,7 @@ private:
 
 protected:
     void drawChildren(HDC hdc) {
-        size_t initialPos = 0;
         for (size_t i = 0; i < children.size(); i++) {
-            // adjust child position relative to parent rect
-            Gdiplus::Rect childRect = children.at(i)->getRect();
-            childRect.X += rect.X + padding.x;
-            childRect.Y += rect.Y + padding.y;
-            if (direction == UI::HORIZONTAL) { 
-                childRect.X += i * gap + initialPos; 
-                initialPos = childRect.X + childRect.Width;
-            }
-            else { 
-                childRect.Y += i * gap + initialPos; 
-                initialPos = childRect.Y + childRect.Height;
-            }
-            children.at(i)->setRect(childRect);
             children.at(i)->draw(hdc);
         }
     }
@@ -66,6 +53,7 @@ public:
     virtual void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) { handleChildren(hwnd, msg, wParam, lParam); }
 
     Gdiplus::Rect getRect() { return rect; }
+    UI::SIZE getSize() { return UI::SIZE{rect.Width, rect.Height}; }
     int getWidth() { return rect.Width - padding.x * 3; }
     int getHeight() { return rect.Height - padding.y * 3; }
     Element& setRect(Gdiplus::Rect newRect) { rect = newRect; return *this; }
@@ -76,7 +64,21 @@ public:
     Element& setGap(size_t newGap) { gap = newGap; return *this; }
 
     std::vector<std::shared_ptr<Element>>& getChildren() { return children; }
-    Element& addChild(const std::shared_ptr<Element>& newChild) { children.push_back(newChild); return *this; }
+    Element& addChild(const std::shared_ptr<Element>& newChild) { 
+        if (children.empty()) {
+            newChild->setPosition({rect.X + padding.x, rect.Y + padding.y});
+        } else {
+            Gdiplus::Rect lastChildRect = children.back().get()->getRect();
+            newChild->setRect(Gdiplus::Rect(
+                lastChildRect.X + lastChildRect.Width + gap,
+                lastChildRect.Y + lastChildRect.Height + gap,
+                newChild->getSize().width,
+                newChild->getSize().height
+            ));
+        }
+        children.push_back(newChild); 
+        return *this; 
+    }
     Element& removeChild(size_t childIndex) { 
         if (childIndex >= 0 && childIndex < children.size()) {
             children.erase(children.begin() + childIndex);
@@ -95,6 +97,13 @@ public:
     Element& centerFromElement(std::shared_ptr<Element> parent) {
         centerVerticalFromElement(parent);
         centerHorizontalFromElement(parent);
+        return *this;
+    }
+    Element& fitToChildren() {
+        if (children.empty()) { return *this; } 
+        std::shared_ptr<Element> lastChild = children.back();
+        rect.Width = lastChild->getRect().GetRight() + padding.x;
+        rect.Height = lastChild->getRect().GetBottom() + padding.y;
         return *this;
     }
 };
@@ -155,12 +164,22 @@ private:
 
     std::unique_ptr<FontManager> fontManager = std::make_unique<FontManager>();
 
+    void updateBoundingRect() {
+        HDC hdc = GetDC(NULL);
+        Gdiplus::Graphics graphics(hdc);
+        graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+        Gdiplus::RectF measurementFloat(0.0f, 0.0f, 9999.0f, 9999.0f);
+        Gdiplus::RectF boundingRect;
+        graphics.MeasureString(text.c_str(), -1, fontManager->getFont(fontProperties).get(), measurementFloat, alignment.get(), &boundingRect);
+        setSize(UI::SIZE{(int)std::ceil(boundingRect.Width), (int)std::ceil(boundingRect.Height)});
+    }
+
 public:
     std::wstring getText() { return text; }
-    Text& setText(std::wstring newText) { text = newText; return *this; }
+    Text& setText(std::wstring newText) { text = newText; updateBoundingRect(); return *this; }
 
     FontProperties getFontProperties() { return fontProperties; }
-    Text& setFontProperties(FontProperties newFontProperties) { fontProperties = newFontProperties; return *this; }
+    Text& setFontProperties(FontProperties newFontProperties) { fontProperties = newFontProperties; updateBoundingRect(); return *this; }
 
     Gdiplus::Color getTextColor() { return textColor; }
     Text& setTextColor(Gdiplus::Color newTextColor) { textColor = newTextColor; return *this; }
@@ -173,14 +192,20 @@ public:
         graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
 
         Gdiplus::SolidBrush textBrush(textColor);
-        Gdiplus::RectF rectFloat(
+        Gdiplus::RectF textRect = Gdiplus::RectF(
             (float)this->getRect().X,
             (float)this->getRect().Y,
             (float)this->getRect().Width,
             (float)this->getRect().Height
         );
 
-        graphics.DrawString(text.c_str(), -1, fontManager->getFont(fontProperties).get(), rectFloat, alignment.get(), &textBrush);
+        graphics.DrawString(text.c_str(), -1, fontManager->getFont(fontProperties).get(), textRect, alignment.get(), &textBrush);
+
+        // for debugging purposes
+        // Gdiplus::Pen debugPen(Gdiplus::Color(255, 0, 0, 255), 1);
+        // graphics.DrawRectangle(&debugPen, getRect());
+        // std::string message = "Bounding Rect X: " + std::to_string(boundingRect.X) + "\nBounding Rect Width: " + std::to_string(boundingRect.Width) + "\nElement X: " + std::to_string(getRect().X) + "\nElement Width: " + std::to_string(getRect().Width) + "\nCalcualted Width: " + std::to_string(getSize().width);
+        // MessageBoxA(NULL, message.c_str(), "debug", MB_OK);
 
         drawChildren(hdc);
     }

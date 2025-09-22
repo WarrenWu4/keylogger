@@ -26,6 +26,7 @@ private:
 
     std::unique_ptr<FontManager> fontManager = std::make_unique<FontManager>();
     FontProperties fontProperties;
+
     std::shared_ptr<Box> boxEl = std::make_shared<Box>();
     std::shared_ptr<Text> textEl = std::make_shared<Text>();
 
