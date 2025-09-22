@@ -122,14 +122,23 @@ public:
         Gdiplus::SolidBrush backgroundBrush(backgroundColor);
         Gdiplus::Pen borderPen(borderColor, borderWidth);
 
-        Gdiplus::GraphicsPath path;
-        path.AddArc(rect.X, rect.Y, borderRadius * 2, borderRadius * 2, 180, 90);
-        path.AddArc(rect.X + rect.Width - borderRadius * 2, rect.Y, borderRadius * 2, borderRadius * 2, 270, 90);
-        path.AddArc(rect.X + rect.Width - borderRadius * 2, rect.Y + rect.Height - borderRadius * 2, borderRadius * 2, borderRadius * 2, 0, 90);
-        path.AddArc(rect.X, rect.Y + rect.Height - borderRadius * 2, borderRadius * 2, borderRadius * 2, 90, 90);
-        path.CloseFigure();
-        graphics.FillPath(&backgroundBrush, &path);
-        if (borderWidth > 0) { graphics.DrawPath(&borderPen, &path); }
+        if (borderRadius > 0) {
+            Gdiplus::GraphicsPath path;
+            path.AddArc(rect.X, rect.Y, borderRadius * 2, borderRadius * 2, 180, 90);
+            path.AddArc(rect.X + rect.Width - borderRadius * 2, rect.Y, borderRadius * 2, borderRadius * 2, 270, 90);
+            path.AddArc(rect.X + rect.Width - borderRadius * 2, rect.Y + rect.Height - borderRadius * 2, borderRadius * 2, borderRadius * 2, 0, 90);
+            path.AddArc(rect.X, rect.Y + rect.Height - borderRadius * 2, borderRadius * 2, borderRadius * 2, 90, 90);
+            path.CloseFigure();
+            graphics.FillPath(&backgroundBrush, &path);
+            if (borderWidth > 0) {
+                graphics.DrawPath(&borderPen, &path);
+            }
+        } else {
+            graphics.FillRectangle(&backgroundBrush, rect);
+            if (borderWidth > 0) {
+                graphics.DrawRectangle(&borderPen, rect);
+            }
+        }
 
         drawChildren(hdc);
     }

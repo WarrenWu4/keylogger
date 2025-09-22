@@ -8,6 +8,7 @@ KeyWindow::KeyWindow(HINSTANCE hInstance) {
         screenWidth-windowSize.x-40,
         (int)(screenHeight*0.8)-windowSize.y
     };
+
     hwnd = CreateWindowEx(
         WS_EX_TOPMOST | WS_EX_NOACTIVATE, 
         L"Key Display", 
@@ -20,19 +21,19 @@ KeyWindow::KeyWindow(HINSTANCE hInstance) {
     GetClientRect(hwnd, &rect); // {0, 0, windowSize.x, windowSize.y}
 
     boxEl->setBackgroundColor(Gdiplus::Color(0, 0, 0))
-        .setBorderColor(Gdiplus::Color(255, 0, 0))
-        .setBorderRadius(8)
         .setPosition({0, 0})
         .setSize({windowSize.x, windowSize.y});
-    textEl->setFontProperties({
-            L"JetBrains Mono",
-            16,
-            Gdiplus::FontStyleBold
-        })
+
+    fontProperties = {
+        L"JetBrains Mono",
+        20,
+        Gdiplus::FontStyleBold
+    };
+
+    textEl->setFontProperties(fontProperties)
         .setTextColor(Gdiplus::Color(255, 255, 255))
         .setPosition({0, 0})
-        .setSize({windowSize.x, windowSize.y})
-        .centerFromElement(boxEl);
+        .setSize({windowSize.x, windowSize.y});
     boxEl->addChild(textEl);
 }
 
@@ -49,12 +50,6 @@ HWND KeyWindow::getHwnd() {
 
 void KeyWindow::drawText(HDC hdc) {
     if (text.empty()) { return; }
-    // COLORREF textColor = RGB(255, 255, 255);
-    // SetTextColor(hdc, textColor);
-    // SetBkColor(hdc, TRANSPARENT);
-    // HFONT oldFont = (HFONT)SelectObject(hdc, font);
-    // DrawTextW(hdc, this->text.c_str(), -1, &rect, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
-    // SelectObject(hdc, oldFont);
     textEl->setText(this->text);
     boxEl->draw(hdc);
 }

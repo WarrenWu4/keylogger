@@ -23,7 +23,6 @@ private:
 
     POINT windowSize = {0, 0};
     POINT windowOffset = {0, 0};
-    double transparency = 1.0;
 
     std::unique_ptr<FontManager> fontManager = std::make_unique<FontManager>();
     FontProperties fontProperties;
