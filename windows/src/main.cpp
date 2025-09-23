@@ -17,6 +17,7 @@
 #include "system_tray.h"
 #include "settings_window.h"
 #include "gdiplus_context.h"
+#include "settings_manager.h"
 
 #define IDT_INACTIVE_TIMER 1
 
@@ -24,10 +25,10 @@ std::shared_ptr<GdiplusContext> gdiplusContext = nullptr;
 std::shared_ptr<KeyWindow> display = nullptr;
 std::shared_ptr<SystemTray> tray = nullptr;
 std::shared_ptr<SettingsWindow> settingsWindow = nullptr;
+std::unique_ptr<SettingsManager> settingsManager = nullptr;
 
 HHOOK hKeyboardHook = nullptr;
 std::wstring textBuffer = L"";
-const int maxTextBuffer = 20;
 
 void cleanup() {
     if (hKeyboardHook) {
@@ -48,16 +49,22 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
             BYTE keyboardState[256] = {0};
             keyboardState[VK_SHIFT] = (GetAsyncKeyState(VK_SHIFT) & 0x8000) ? 0x80 : 0;
             textBuffer += getStrFromVKey(vKey, scanCode, keyboardState); 
-            if (textBuffer.size() > maxTextBuffer)
-            {
-                textBuffer.erase(0, textBuffer.size() - maxTextBuffer);
+            if (textBuffer.size() > static_cast<size_t>(settingsManager->getSettings()->textBufferLength)) {
+                textBuffer.erase(0, textBuffer.size() - settingsManager->getSettings()->textBufferLength);
             }
             display->setText(textBuffer);
             ShowWindow(display->getHwnd(), SW_SHOW);
             InvalidateRect(display->getHwnd(), NULL, TRUE);
             PostMessage(display->getHwnd(), WM_PAINT, 0, 0);
-            KillTimer(display->getHwnd(), IDT_INACTIVE_TIMER);
-            SetTimer(display->getHwnd(), IDT_INACTIVE_TIMER, 5000, NULL);
+            if (settingsManager->getSettings()->inactiveTimeout > 0) {
+                KillTimer(display->getHwnd(), IDT_INACTIVE_TIMER);
+                SetTimer(
+                    display->getHwnd(), 
+                    IDT_INACTIVE_TIMER,
+                    settingsManager->getSettings()->inactiveTimeout * 1000,
+                    NULL
+                );
+            }
         }
     }
     return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
@@ -78,7 +85,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             POINT cursorPos;
             GetCursorPos(&cursorPos);
             ScreenToClient(display->getHwnd(), &cursorPos);
-            if (PtInRect(display->getRect(), cursorPos)) {
+            RECT temp = display->getRect();
+            if (PtInRect(&temp, cursorPos)) {
                 display->dragging = true;
                 SetCapture(display->getHwnd());
             }
@@ -134,6 +142,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
     gdiplusContext = std::make_shared<GdiplusContext>();
+    settingsManager = std::make_unique<SettingsManager>();
 
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;
@@ -153,7 +162,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 1;
     }
 
-    display = std::make_shared<KeyWindow>(hInstance);
+    display = std::make_shared<KeyWindow>(hInstance, settingsManager->getSettings());
     tray = std::make_shared<SystemTray>(hInstance, display->getHwnd());
     settingsWindow = std::make_shared<SettingsWindow>(hInstance, display);
     ShowWindow(display->getHwnd(), SW_SHOW);

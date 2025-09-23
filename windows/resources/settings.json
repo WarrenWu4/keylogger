@@ -1,12 +1,16 @@
 {
     "fontSize": 16,
-    "textBufferLength": 20,
-    "inactiveTimeout": -1,
-    "transparency": 1,
+    "fontFamily": "JetBrains Mono",
     "textColor": "#ffffff",
     "backgroundColor": "#000000",
+    "textBufferLength": 20,
+    "inactiveTimeout": 10,
     "windowPosition": { 
         "x": 0, 
         "y": 0 
+    },
+    "windowPadding": {
+        "x": 8,
+        "y": 8
     }
 }

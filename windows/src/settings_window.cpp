@@ -1,7 +1,6 @@
 #include "settings_window.h"
 
 SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<KeyWindow> display) {
-    loadSettings();
     this->display = display;
     INITCOMMONCONTROLSEX icex;
     icex.dwSize = sizeof(icex);
@@ -89,48 +88,11 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<KeyWindow> d
 
 }
 
-COLORREF SettingsWindow::hexToRgb(std::wstring hex, COLORREF defaultColor) {
-    if (hex.size() != 7 || hex[0] != L'#') { return defaultColor; }
-    for (size_t i = 1; i < hex.size(); i++) { // !
-        if (!iswxdigit(hex[i])) { return defaultColor; }
-    }
-    return RGB(
-        std::stoi(hex.substr(1, 2), nullptr, 16),
-        std::stoi(hex.substr(3, 2), nullptr, 16),
-        std::stoi(hex.substr(5, 2), nullptr, 16)
-    );
-}
-
-std::wstring SettingsWindow::rgbToHex(COLORREF color) {
-    int r = GetRValue(color);
-    int g = GetGValue(color);
-    int b = GetBValue(color);
-    wchar_t buffer[8];
-    swprintf(buffer, 8, L"#%02X%02X%02X", r, g, b);
-    return std::wstring(buffer);
-}
-
 SettingsWindow::~SettingsWindow() {
     if (hwnd) {
         DestroyWindow(hwnd);
         hwnd = nullptr;
     }
-}
-
-void SettingsWindow::loadSettings() {
-    std::wstring settingsPath = resourceFinder->getResource(L"settings.json");
-    std::string settingsPathNarrow(settingsPath.begin(), settingsPath.end());
-    JsonValue res = jsonParser->parseFromFile(settingsPathNarrow);
-    JsonObject obj = res.getObject();
-    appSettings.fontSize = static_cast<int>(obj.at("fontSize").getNumber());
-    appSettings.textBufferLength = static_cast<int>(obj.at("textBufferLength").getNumber());
-    appSettings.inactiveTimeout = static_cast<int>(obj.at("inactiveTimeout").getNumber());
-    appSettings.transparency = obj.at("transparency").getNumber();
-    appSettings.textColor = hexToRgb(std::wstring(obj.at("textColor").getString().begin(), obj.at("textColor").getString().end()), RGB(255, 255, 255));
-    appSettings.backgroundColor = hexToRgb(std::wstring(obj.at("backgroundColor").getString().begin(), obj.at("backgroundColor").getString().end()), RGB(0, 0, 0));
-    JsonObject windowPos = obj.at("windowPosition").getObject();
-    appSettings.windowPosition.first = static_cast<int>(windowPos.at("x").getNumber());
-    appSettings.windowPosition.second = static_cast<int>(windowPos.at("y").getNumber());
 }
 
 LRESULT CALLBACK SettingsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -178,8 +140,4 @@ LRESULT CALLBACK SettingsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
         }
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
-}
-
-void SettingsWindow::saveSettings() {
-
 }

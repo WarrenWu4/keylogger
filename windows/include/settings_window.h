@@ -12,19 +12,10 @@
 #include "display.h"
 #include "resource_finder.h"
 #include "jsonge.h"
+#include "settings_manager.h"
 
 #define IDC_EDIT 201
 #define IDC_SPIN 202
-
-struct Settings {
-    int fontSize = 16;
-    int textBufferLength = 20;
-    int inactiveTimeout = -1; // -1 for never
-    double transparency = 1.0;
-    COLORREF textColor = RGB(255, 255, 255);
-    COLORREF backgroundColor = RGB(0, 0, 0);
-    std::pair<int, int> windowPosition = {0, 0};
-};
 
 class SettingsWindow {
 private:
@@ -36,13 +27,6 @@ private:
     std::shared_ptr<ResourceFinder> resourceFinder = std::make_shared<ResourceFinder>();
     std::shared_ptr<Json> jsonParser = std::make_shared<Json>();
     std::shared_ptr<KeyWindow> display = nullptr;
-
-    void loadSettings();
-    void saveSettings();
-    // void updateSettings(const std::function<void(Settings&)>& appSettings) { updateSettings(appSettings); saveSettings(); }
-    
-    COLORREF hexToRgb(std::wstring hex, COLORREF defaultColor = RGB(0, 0, 0));
-    std::wstring rgbToHex(COLORREF color);
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
