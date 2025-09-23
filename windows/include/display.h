@@ -25,7 +25,7 @@ private:
 
     std::shared_ptr<Settings> appSettings = std::make_shared<Settings>();
 
-    Logger logger = Logger("debug.log", 1024 * 1024); // 1MB max file size
+    // Logger logger = Logger("debug.log", 1024 * 1024); // 1MB max file size
 
 public:
     KeyWindow(HINSTANCE hInstance, std::shared_ptr<Settings> appSettings);

@@ -214,8 +214,8 @@ public:
         graphics.DrawString(text.c_str(), -1, fontManager->getFont(fontProperties).get(), textRect, alignment.get(), &textBrush);
 
         // for debugging purposes
-        Gdiplus::Pen debugPen(Gdiplus::Color(255, 0, 0, 255), 1);
-        graphics.DrawRectangle(&debugPen, getRect());
+        // Gdiplus::Pen debugPen(Gdiplus::Color(255, 0, 0, 255), 1);
+        // graphics.DrawRectangle(&debugPen, getRect());
         // std::string message = "Bounding Rect X: " + std::to_string(boundingRect.X) + "\nBounding Rect Width: " + std::to_string(boundingRect.Width) + "\nElement X: " + std::to_string(getRect().X) + "\nElement Width: " + std::to_string(getRect().Width) + "\nCalcualted Width: " + std::to_string(getSize().width);
         // MessageBoxA(NULL, message.c_str(), "debug", MB_OK);
 
