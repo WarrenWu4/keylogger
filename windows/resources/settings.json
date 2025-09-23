@@ -4,7 +4,7 @@
     "textColor": "#ffffff",
     "backgroundColor": "#000000",
     "textBufferLength": 20,
-    "inactiveTimeout": 10,
+    "inactiveTimeout": -1,
     "windowPosition": { 
         "x": 0, 
         "y": 0 
