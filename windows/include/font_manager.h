@@ -13,6 +13,18 @@ struct FontProperties {
     int fontSize = 12;
     Gdiplus::FontStyle fontStyle = Gdiplus::FontStyleBold;
 
+    FontProperties() {
+        fontFamily = L"JetBrains Mono";
+        fontSize = 12;
+        fontStyle = Gdiplus::FontStyleBold;
+    }
+
+    FontProperties(std::wstring ff, int fs, Gdiplus::FontStyle fst) {
+        fontFamily = ff;
+        fontSize = fs;
+        fontStyle = fst;
+    }
+
     bool operator==(const FontProperties& other) const {
         return fontFamily == other.fontFamily &&
                fontSize == other.fontSize &&

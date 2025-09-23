@@ -56,6 +56,7 @@ public:
     Gdiplus::Rect getRect() { return rect; }
     RECT getConvertedRect() { return RECT{rect.X, rect.Y, rect.GetRight(), rect.GetBottom()}; }
     UI::SIZE getSize() { return UI::SIZE{rect.Width, rect.Height}; }
+    UI::POSITION getPosition() { return UI::POSITION{rect.X, rect.Y}; }
     int getWidth() { return rect.Width - padding.x * 3; }
     int getHeight() { return rect.Height - padding.y * 3; }
     Element& setRect(Gdiplus::Rect newRect) { rect = newRect; return *this; }
@@ -67,16 +68,25 @@ public:
 
     std::vector<std::shared_ptr<Element>>& getChildren() { return children; }
     Element& addChild(const std::shared_ptr<Element>& newChild) { 
+        UI::POSITION childPosition = newChild->getPosition();
         if (children.empty()) {
-            newChild->setPosition({rect.X + padding.x, rect.Y + padding.y});
+            newChild->setPosition({
+                childPosition.x + rect.X + padding.x, 
+                childPosition.y + rect.Y + padding.y
+            });
         } else {
-            Gdiplus::Rect lastChildRect = children.back().get()->getRect();
-            newChild->setRect(Gdiplus::Rect(
-                lastChildRect.X + lastChildRect.Width + gap,
-                lastChildRect.Y + lastChildRect.Height + gap,
-                newChild->getSize().width,
-                newChild->getSize().height
-            ));
+            Gdiplus::Rect lastChildRect = children.back()->getRect();
+            if (direction == UI::VERTICAL) {
+                newChild->setPosition({
+                    childPosition.x + rect.X + padding.x,
+                    static_cast<long>(lastChildRect.Y + lastChildRect.Height + gap)
+                });
+            } else {
+                newChild->setPosition({
+                    static_cast<long>(lastChildRect.X + lastChildRect.Width + gap),
+                    childPosition.y + rect.Y + padding.y
+                });
+            }
         }
         children.push_back(newChild); 
         return *this; 
@@ -204,8 +214,8 @@ public:
         graphics.DrawString(text.c_str(), -1, fontManager->getFont(fontProperties).get(), textRect, alignment.get(), &textBrush);
 
         // for debugging purposes
-        // Gdiplus::Pen debugPen(Gdiplus::Color(255, 0, 0, 255), 1);
-        // graphics.DrawRectangle(&debugPen, getRect());
+        Gdiplus::Pen debugPen(Gdiplus::Color(255, 0, 0, 255), 1);
+        graphics.DrawRectangle(&debugPen, getRect());
         // std::string message = "Bounding Rect X: " + std::to_string(boundingRect.X) + "\nBounding Rect Width: " + std::to_string(boundingRect.Width) + "\nElement X: " + std::to_string(getRect().X) + "\nElement Width: " + std::to_string(getRect().Width) + "\nCalcualted Width: " + std::to_string(getSize().width);
         // MessageBoxA(NULL, message.c_str(), "debug", MB_OK);
 
@@ -401,32 +411,54 @@ public:
 
 class TextInput : public Element {
 private:
-    std::shared_ptr<Text> label = std::make_shared<Text>();
-    std::shared_ptr<Box> container = std::make_shared<Box>();
     bool focus = false;
     std::wstring validCharacters = L"";
+    std::wstring placeholder = L"";
     int minLength = 0;
     int maxLength = 50;
+
+    std::shared_ptr<Box> boxEl = std::make_shared<Box>();
+    std::shared_ptr<Text> textEl = std::make_shared<Text>();
+
     std::function<void()> onSubmit = nullptr;
+    std::function<void()> onFocus = nullptr;
+    std::function<void()> onBlur = nullptr;
+    std::function<void()> onChange = nullptr;
 
     bool isValidChar(wchar_t inputChar) {
         return (validCharacters.find(inputChar) != std::wstring::npos);
     }
+
 public:
-    std::shared_ptr<Text> getLabel() { return label; }
-    std::shared_ptr<Box> getContainer() { return container; }
+    void init() {
+        placeholder = L"16"; // ! temp
+        boxEl->setBackgroundColor(Gdiplus::Color(255, 255, 255))
+            .setBorderColor(Gdiplus::Color(0, 0, 0))
+            .setBorderWidth(2)
+            .setPadding({8, 8})
+            .setSize({80, 40});
+        textEl->setText(this->placeholder)
+            .setFontProperties(FontProperties())
+            .setTextColor(Gdiplus::Color(0, 0, 0));
+        textEl->centerFromElement(boxEl);
+        this->addChild(boxEl);
+        boxEl->addChild(textEl);
+    }
+
+    TextInput& setText(std::wstring newText) { 
+        textEl->setText(newText); 
+        boxEl->fitToChildren();
+        return *this; 
+    }
+
     TextInput& setFocus(bool newFocus) { focus = newFocus; return *this; }
     bool isFocused() { return focus; }
     TextInput& setValidCharacters(std::wstring newValidCharacters) { validCharacters = newValidCharacters; return *this; }
     TextInput& setMaxLength(int newMaxLength) { maxLength = newMaxLength; return *this; }
     TextInput& setMinLength(int newMinLength) { minLength = newMinLength; return *this; }
     TextInput& setOnSubmit(std::function<void()> newOnSubmit) { onSubmit = newOnSubmit; return *this; }
-
-    void draw(HDC hdc) override {  
-        container->draw(hdc);
-        label->draw(hdc);
-        drawChildren(hdc);
-    }
+    TextInput& setOnFocus(std::function<void()> newOnFocus) { onFocus = newOnFocus; return *this; }
+    TextInput& setOnBlur(std::function<void()> newOnBlur) { onBlur = newOnBlur; return *this; }
 
     void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) override {
         switch (msg) {
@@ -434,16 +466,19 @@ public:
                 POINT cursorPos;
                 GetCursorPos(&cursorPos);
                 ScreenToClient(hwnd, &cursorPos);
-                RECT containerRect = container->getConvertedRect();
+                RECT containerRect = this->getConvertedRect();
+                // std::string msg = "Cursor X: " + std::to_string(cursorPos.x) + "\nCursor Y: " + std::to_string(cursorPos.y) + "\nContainer Left: " + std::to_string(containerRect.left) + "\nContainer Right: " + std::to_string(containerRect.right) + "\nContainer Top: " + std::to_string(containerRect.top) + "\nContainer Bottom: " + std::to_string(containerRect.bottom);
+                // MessageBoxA(NULL, msg.c_str(), "debug", MB_OK);
                 if (PtInRect(&containerRect, cursorPos)) {
+                    assert(onFocus && onBlur);
                     if (focus) {
-                        container->setBorderColor(RGB(0, 0, 0));
+                        onBlur();
                     } else {
-                        container->setBorderColor(RGB(0, 0, 255));
+                        onFocus();
                     }
                     focus = !focus;
+                    InvalidateRect(hwnd, &containerRect, TRUE);
                 }
-                InvalidateRect(hwnd, &containerRect, TRUE);
                 break;
             }
             case WM_CHAR: {
@@ -452,29 +487,31 @@ public:
                         case VK_RETURN:
                         case VK_ESCAPE: {
                             focus = false;
-                            container->setBorderColor(RGB(0, 0, 0));
+                            if (onBlur) { onBlur(); }
                             if (onSubmit) { onSubmit(); }
-                            RECT tempRect = container->getConvertedRect();
+                            RECT tempRect = this->getConvertedRect();
                             InvalidateRect(hwnd, &tempRect, TRUE);
                             break;
                         }
                         case VK_BACK: {
-                            std::wstring currentText = label->getText();
-                            if (currentText.length() > static_cast<size_t>(minLength)) {
-                                currentText.pop_back();
-                                label->setText(currentText);
-                                RECT tempRect = getConvertedRect();
-                                InvalidateRect(hwnd, &tempRect, TRUE);
-                            }
-                            break;
+                            // std::wstring currentText = this->getText();
+                            // if (currentText.length() > static_cast<size_t>(minLength)) {
+                            //     currentText.pop_back();
+                            //     this->setText(currentText);
+                            //     RECT tempRect = this->getConvertedRect();
+                            //     InvalidateRect(hwnd, &tempRect, TRUE);
+                            // }
+                            // break;
                         }
                         default: {
-                            std::wstring currentText = label->getText();
-                            if (isValidChar(static_cast<wchar_t>(wParam)) && currentText.length() < static_cast<size_t>(maxLength)) {
-                                label->setText(currentText + static_cast<wchar_t>(wParam));
-                                RECT tempRect = getConvertedRect();
-                                InvalidateRect(hwnd, &tempRect, TRUE);
-                            }
+                            assert(onChange);
+                            onChange();
+                            // std::wstring currentText = this->getText();
+                            // if (isValidChar(static_cast<wchar_t>(wParam)) && currentText.length() < static_cast<size_t>(maxLength)) {
+                            //     this->setText(currentText + static_cast<wchar_t>(wParam));
+                            //     RECT tempRect = this->getConvertedRect();
+                            //     InvalidateRect(hwnd, &tempRect, TRUE);
+                            // }
                             break;
                         }
                     }

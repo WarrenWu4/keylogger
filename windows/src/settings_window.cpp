@@ -36,126 +36,57 @@ SettingsWindow::SettingsWindow(HINSTANCE hInstance, std::shared_ptr<KeyWindow> d
         return;
     }
 
-    FontProperties fontProperties = {
+    FontProperties fontProperties(
         L"JetBrains Mono",
         16,
         Gdiplus::FontStyleBold
-    };
+    );
 
     root->setSize({windowSize.first, windowSize.second})
         .setPosition({0, 0})
         .setPadding({24, 24})
-        .setGap(16);
+        .setGap(8);
     
     std::shared_ptr<Text> ftl = std::make_shared<Text>();
     ftl->setFontProperties(fontProperties)
         .setText(L"Font")
-        .setTextColor(Gdiplus::Color(0, 0, 0))
-        .setSize({root->getSize().width, 24});
+        .setTextColor(Gdiplus::Color(0, 0, 0));
     root->addChild(ftl);
 
-    std::shared_ptr<TextInput> fti = std::make_shared<TextInput>();
-    fti->setValidCharacters(L"0123456789")
-        .setSize({140, 32});
-
-    fti->getContainer()->setBackgroundColor(Gdiplus::Color(255, 255, 255))
-        .setBorderColor(Gdiplus::Color(0, 0, 0))
-        .setBorderRadius(8)
+    std::shared_ptr<Box> ftc = std::make_shared<Box>();
+    ftc->setBackgroundColor(Gdiplus::Color(255, 255, 255))
+        .setBorderColor(Gdiplus::Color(0, 0, 0)) // for debugging purposes
         .setBorderWidth(2)
-        .setSize({120, 36});
+        .setSize({root->getWidth(), 48});
+    root->addChild(ftc);
 
-    fti->getLabel()->setFontProperties(fontProperties)
-        .setText(std::to_wstring(appSettings.fontSize))
-        .setTextColor(Gdiplus::Color(0, 0, 0));
+    std::shared_ptr<TextInput> fti = std::make_shared<TextInput>();
+    ftc->addChild(fti);
+    fti->init();
+    // fti->setValidCharacters(L"0123456789");
 
-    fti->setOnSubmit([&, fti]() {
-        int newFontSize = std::stoi(fti->getLabel()->getText());
-        int clampedFontSize = std::clamp(newFontSize, 8, 40);
-        appSettings.fontSize = clampedFontSize;
-        // TODO: add display update function
-        fti->getLabel()->setText(std::to_wstring(clampedFontSize));
-    });
-    root->addChild(fti);
-    fti->getContainer()->centerFromElement(fti);
-    fti->getLabel()->centerFromElement(fti->getContainer());
+    // fti->setFontProperties(fontProperties)
+    //     .setText(std::to_wstring(appSettings.fontSize))
+    //     .setTextColor(Gdiplus::Color(0, 0, 0));
 
-    // std::shared_ptr<Text> bgcl = std::make_shared<Text>();
-    // bgcl->setFont(font).setText(L"Background Color").setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
-    // root->addChild(bgcl);
-
-    // std::shared_ptr<TextInput> bgci = std::make_shared<TextInput>();
-    // bgci->setValidCharacters(L"0123456789abcdefABCDEF")
-    //     .setMaxLength(7)
-    //     .setMinLength(1)
-    //     .setSize({140, 32})
-    //     .setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
-    // bgci->getContainer()->setBackgroundColor(RGB(255, 255, 255))
-    //     .setBorderColor(RGB(0, 0, 0))
-    //     .setBorderRadius(8)
-    //     .setBorderWidth(2)
-    //     .setSize({120, 36})
-    //     .setPosition(bgci->getPosition());
-    // bgci->getLabel()->setFont(font)
-    //     .setText(rgbToHex(appSettings.backgroundColor))
-    //     .setFontSize(12)
-    //     .verticalCenterFromElement(bgci->getContainer());
-
-    // std::shared_ptr<Box> bgcb = std::make_shared<Box>();
-    // bgcb->setBackgroundColor(appSettings.backgroundColor)
-    //     .setBorderRadius(4)
-    //     .setBorderColor(RGB(0, 0, 0))
-    //     .setBorderWidth(2)
-    //     .setSize({16, 16})
-    //     .setPosition({bgci->getContainer()->getPosition().x + 8, 0})
-    //     .verticalCenterFromElement(bgci->getContainer());
-    // bgci->getLabel()->setPosition({bgcb->getRect().right + 8, bgci->getLabel()->getPosition().y});
-    // std::function<COLORREF(std::wstring, COLORREF)> hexToRgbFunc = std::bind(&SettingsWindow::hexToRgb, this, std::placeholders::_1, std::placeholders::_2);
-    // std::function<std::wstring(COLORREF)> rgbToHexFunc = std::bind(&SettingsWindow::rgbToHex, this, std::placeholders::_1);
-    // bgci->setOnSubmit([&, bgcb, bgci, hexToRgbFunc, rgbToHexFunc](){
-    //     COLORREF defaultColor = bgcb->getBackgroundColor();
-    //     std::wstring hexText = bgci->getLabel()->getText();
-    //     bgcb->setBackgroundColor(hexToRgbFunc(hexText, defaultColor));
-    //     appSettings.backgroundColor = bgcb->getBackgroundColor();
-    //     this->display->setBackgroundColor(appSettings.backgroundColor);
-    //     if (hexText.size() == 7 && hexText[0] == L'#') {
-    //         bgci->getLabel()->setText(hexText);
-    //     } else {
-    //         bgci->getLabel()->setText(rgbToHexFunc(defaultColor));
-    //     }
+    // fti->setOnSubmit([&, fti]() {
+    //     int newFontSize = std::stoi(fti->getText());
+    //     int clampedFontSize = std::clamp(newFontSize, 8, 40);
+    //     appSettings.fontSize = clampedFontSize;
+    //     // TODO: add display update function
+    //     fti->setText(std::to_wstring(clampedFontSize));
     // });
+    // fti->setOnFocus([ftic]() {
+    //     MessageBoxA(NULL, "focus", "debug", MB_OK);
+    //     ftic->setBorderColor(Gdiplus::Color(0, 0, 255));
+    // });
+    // fti->setOnBlur([ftic]() {
+    //     MessageBoxA(NULL, "blur", "debug", MB_OK);
+    //     ftic->setBorderColor(Gdiplus::Color(255, 0, 0));
+    // });
+    // ftic->addChild(fti);
+    // fti->centerFromElement(ftic);
 
-    // bgci->addChild(bgcb);
-    // root->addChild(bgci);
-
-    // std::shared_ptr<Text> fadeLabel = std::make_shared<Text>();
-    // fadeLabel->setFont(font).setText(L"Fade Duration").setFontSize(12).setTextColor(RGB(0, 0, 0)).setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
-    // root->addChild(fadeLabel);
-
-    // std::vector<std::wstring> fadeOptions = {L"1s", L"2s", L"3s", L"5s", L"10s", L"Never"};
-    // std::shared_ptr<Dropdown> fadeDropdown = std::make_shared<Dropdown>();
-    // fadeDropdown->setFont(font).setOptions(fadeOptions).setSelectedIndex(3).setSize({120, 32}).setPosition({root->getPosition().x, root->getLastChildBottom() + 8});
-    // fadeDropdown->getSelectedContainer()->setBackgroundColor(RGB(255, 255, 255)).setBorderColor(RGB(0, 0, 0)).setBorderRadius(8).setBorderWidth(2).setSize({120, 36}).setPosition(fadeDropdown->getPosition());
-    // fadeDropdown->getSelectedText()->setFont(font).setFontSize(12).setTextColor(RGB(0, 0, 0)).centerFromElement(fadeDropdown->getSelectedContainer());
-    // fadeDropdown->getOptionsContainer()->setBackgroundColor(RGB(255, 255, 255)).setBorderColor(RGB(0, 0, 0)).setBorderRadius(8).setBorderWidth(2).setSize({120, static_cast<int>(fadeOptions.size()) * 36}).setPosition({fadeDropdown->getPosition().x, fadeDropdown->getSelectedContainer()->getRect().bottom + 4});
-    // root->addChild(fadeDropdown);
-
-    // std::shared_ptr<Text> positionLabel = std::make_shared<Text>();
-    // positionLabel->setFont(font)
-    //     .setText(L"Position")
-    //     .setFontSize(12)
-    //     .setTextColor(RGB(0, 0, 0))
-    //     .setPosition({root->getPosition().x, root->getLastChildBottom() + 20});
-    // root->addChild(positionLabel);
-
-    // std::shared_ptr<Text> positionDescription = std::make_shared<Text>();
-    // positionDescription->setFont(fontManager->getFont(L"JetBrains Mono", 8))
-    //     .setText(L"To adjust position, click and drag the display. Position will be automatically saved between sessions.")
-    //     .setTextAlignment(DT_WORDBREAK | DT_LEFT)
-    //     .setFontSize(12)
-    //     .setTextColor(RGB(0, 0, 0));
-    // positionDescription->setPosition({root->getPosition().x, root->getLastChildBottom() + 8})
-    //     .setSize({root->getSize().width, positionDescription->getSize().height*2});
-    // root->addChild(positionDescription);
 }
 
 COLORREF SettingsWindow::hexToRgb(std::wstring hex, COLORREF defaultColor) {
