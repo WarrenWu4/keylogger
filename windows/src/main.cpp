@@ -21,11 +21,10 @@
 
 #define IDT_INACTIVE_TIMER 1
 
-std::shared_ptr<GdiplusContext> gdiplusContext = nullptr;
+std::unique_ptr<GdiplusContext> gdiplusContext = nullptr;
+std::unique_ptr<SettingsManager> settingsManager = nullptr;
 std::shared_ptr<KeyWindow> display = nullptr;
 std::shared_ptr<SystemTray> tray = nullptr;
-std::shared_ptr<SettingsWindow> settingsWindow = nullptr;
-std::unique_ptr<SettingsManager> settingsManager = nullptr;
 
 HHOOK hKeyboardHook = nullptr;
 std::wstring textBuffer = L"";
@@ -54,8 +53,8 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
             }
             display->setText(textBuffer);
             ShowWindow(display->getHwnd(), SW_SHOW);
-            InvalidateRect(display->getHwnd(), NULL, TRUE);
-            PostMessage(display->getHwnd(), WM_PAINT, 0, 0);
+            // InvalidateRect(display->getHwnd(), NULL, TRUE);
+            // PostMessage(display->getHwnd(), WM_PAINT, 0, 0);
             if (settingsManager->getSettings()->inactiveTimeout > 0) {
                 KillTimer(display->getHwnd(), IDT_INACTIVE_TIMER);
                 SetTimer(
@@ -141,7 +140,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
-    gdiplusContext = std::make_shared<GdiplusContext>();
+    gdiplusContext = std::make_unique<GdiplusContext>();
     settingsManager = std::make_unique<SettingsManager>();
 
     WNDCLASS wc = { };
@@ -164,7 +163,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
     display = std::make_shared<KeyWindow>(hInstance, settingsManager->getSettings());
     tray = std::make_shared<SystemTray>(hInstance, display->getHwnd());
-    settingsWindow = std::make_shared<SettingsWindow>(hInstance, display);
     ShowWindow(display->getHwnd(), SW_SHOW);
 
     MSG msg = { };
