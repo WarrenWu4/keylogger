@@ -50,6 +50,26 @@ SettingsManager::SettingsManager() {
     appSettings->windowPadding.y = static_cast<int>(padObj.at("y").getNumber());
 }
 
+// ! UNTESTED
+// ! stringify works but other parts might not
 void SettingsManager::saveSettings() {
-
+    JsonValue jv = JsonObject{
+        {"fontSize", static_cast<double>(appSettings->fontSize)},
+        {"fontFamily", stringToWstring(appSettings->fontFamily)},
+        {"textColor", stringToWstring(argbToHex(appSettings->textColor))},
+        {"backgroundColor", stringToWstring(argbToHex(appSettings->backgroundColor))},
+        {"textBufferLength", static_cast<double>(appSettings->textBufferLength)},
+        {"inactiveTimeout", static_cast<double>(appSettings->inactiveTimeout)},
+        {"windowPosition", JsonObject{
+            {"x", static_cast<double>(appSettings->windowPosition.x)},
+            {"y", static_cast<double>(appSettings->windowPosition.y)}
+        }},
+        {"windowPadding", JsonObject{
+            {"x", static_cast<double>(appSettings->windowPadding.x)},
+            {"y", static_cast<double>(appSettings->windowPadding.y)}
+        }}
+    }
+    std::string stringifyRes = jsonParser->stringify(jv);
+    std::wstring settingsPath = resourceFinder->getResource(L"settings.json");
+    jsonParser->writeToFile(stringifyRes, stringToWstring(settingsPath));
 }
