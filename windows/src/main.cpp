@@ -53,8 +53,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
             }
             display->setText(textBuffer);
             ShowWindow(display->getHwnd(), SW_SHOW);
-            // InvalidateRect(display->getHwnd(), NULL, TRUE);
-            // PostMessage(display->getHwnd(), WM_PAINT, 0, 0);
+            InvalidateRect(display->getHwnd(), NULL, TRUE);
             if (settingsManager->getSettings()->inactiveTimeout > 0) {
                 KillTimer(display->getHwnd(), IDT_INACTIVE_TIMER);
                 SetTimer(

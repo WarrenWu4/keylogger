@@ -48,7 +48,7 @@ protected:
             children.at(i)->handler(hwnd, msg, wParam, lParam);
         }
     }
-
+    
 public:
     virtual void draw(HDC hdc) { drawChildren(hdc); }
     virtual void handler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) { handleChildren(hwnd, msg, wParam, lParam); }
@@ -113,9 +113,9 @@ public:
     }
     Element& fitToChildren() {
         if (children.empty()) { return *this; } 
-        std::shared_ptr<Element> lastChild = children.back();
-        rect.Width = lastChild->getRect().GetRight() + padding.x;
-        rect.Height = lastChild->getRect().GetBottom() + padding.y;
+        Gdiplus::Rect lastChild = children.back()->getRect();
+        rect.Width = lastChild.GetRight() + padding.x;
+        rect.Height = lastChild.GetBottom() + padding.y;
         return *this;
     }
 };
@@ -183,6 +183,7 @@ private:
         Gdiplus::RectF measurementFloat(0.0f, 0.0f, 9999.0f, 9999.0f);
         Gdiplus::RectF boundingRect;
         graphics.MeasureString(text.c_str(), -1, fontManager->getFont(fontProperties).get(), measurementFloat, alignment.get(), &boundingRect);
+        ReleaseDC(NULL, hdc);
         setSize(UI::SIZE{(int)std::ceil(boundingRect.Width), (int)std::ceil(boundingRect.Height)});
     }
 
