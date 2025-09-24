@@ -53,23 +53,21 @@ SettingsManager::SettingsManager() {
 // ! UNTESTED
 // ! stringify works but other parts might not
 void SettingsManager::saveSettings() {
-    JsonValue jv = JsonObject{
-        {"fontSize", static_cast<double>(appSettings->fontSize)},
-        {"fontFamily", stringToWstring(appSettings->fontFamily)},
-        {"textColor", stringToWstring(argbToHex(appSettings->textColor))},
-        {"backgroundColor", stringToWstring(argbToHex(appSettings->backgroundColor))},
-        {"textBufferLength", static_cast<double>(appSettings->textBufferLength)},
-        {"inactiveTimeout", static_cast<double>(appSettings->inactiveTimeout)},
-        {"windowPosition", JsonObject{
-            {"x", static_cast<double>(appSettings->windowPosition.x)},
-            {"y", static_cast<double>(appSettings->windowPosition.y)}
-        }},
-        {"windowPadding", JsonObject{
-            {"x", static_cast<double>(appSettings->windowPadding.x)},
-            {"y", static_cast<double>(appSettings->windowPadding.y)}
-        }}
-    }
-    std::string stringifyRes = jsonParser->stringify(jv);
+    std::string stringifyRes = "{\n\t\"fontSize\": " + std::to_string(appSettings->fontSize) + ",\n";
+    stringifyRes += "\t\"fontFamily\": \"" + stringToWstring(appSettings->fontFamily) + "\",\n";
+    stringifyRes += "\t\"textColor\": \"" + stringToWstring(argbToHex(appSettings->textColor)) + "\",\n";
+    stringifyRes += "\t\"backgroundColor\": \"" + stringToWstring(argbToHex(appSettings->backgroundColor)) + "\",\n";
+    stringifyRes += "\t\"textBufferLength\": " + std::to_string(appSettings->textBufferLength) + ",\n";
+    stringifyRes += "\t\"inactiveTimeout\": " + std::to_string(appSettings->inactiveTimeout) + ",\n";
+    stringifyRes += "\t\"windowPosition\": {\n";
+    stringifyRes += "\t\t\"x\": " + std::to_string(appSettings->windowPosition.x) + ",\n";
+    stringifyRes += "\t\t\"y\": " + std::to_string(appSettings->windowPosition.y) + "\n";
+    stringifyRes += "\t},\n";
+    stringifyRes += "\t\"windowPadding\": {\n";
+    stringifyRes += "\t\t\"x\": " + std::to_string(appSettings->windowPadding.x) + ",\n";
+    stringifyRes += "\t\t\"y\": " + std::to_string(appSettings->windowPadding.y) + "\n";
+    stringifyRes += "\t}\n";
+    stringifyRes += "}";
     std::wstring settingsPath = resourceFinder->getResource(L"settings.json");
     jsonParser->writeToFile(stringifyRes, stringToWstring(settingsPath));
 }

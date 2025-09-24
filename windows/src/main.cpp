@@ -131,7 +131,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 PostQuitMessage(0);
                 break;
             } else if (LOWORD(wParam) == ID_TRAY_SETTINGS) {
-                ShowWindow(settingsWindow->GetHwnd(), SW_SHOW);
+                // ShowWindow(settingsWindow->GetHwnd(), SW_SHOW);
                 break;
             }
         }
