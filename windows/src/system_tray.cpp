@@ -15,7 +15,7 @@ SystemTray::SystemTray(HINSTANCE hInstance, HWND hwnd) {
     // system tray menu
     hMenu = CreatePopupMenu();
     // ! temp disable settings since it's not implemented yet
-    // AppendMenu(hMenu, MF_STRING, ID_TRAY_SETTINGS, L"Settings");
+    AppendMenu(hMenu, MF_STRING, ID_TRAY_SETTINGS, L"Settings");
     AppendMenu(hMenu, MF_STRING, ID_TRAY_EXIT, L"Exit");
 }
 

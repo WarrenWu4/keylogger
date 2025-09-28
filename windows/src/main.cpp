@@ -8,6 +8,7 @@
 #include <devguid.h>
 #include <setupapi.h>
 #include <gdiplus.h>
+#include <shellapi.h>
 #include <vector>
 #include <utility>
 #include <queue>
@@ -18,11 +19,13 @@
 #include "settings_window.h"
 #include "gdiplus_context.h"
 #include "settings_manager.h"
+#include "resource_finder.h"
 
 #define IDT_INACTIVE_TIMER 1
 
 std::unique_ptr<GdiplusContext> gdiplusContext = nullptr;
 std::unique_ptr<SettingsManager> settingsManager = nullptr;
+std::unique_ptr<ResourceFinder> resourceFinder = nullptr;
 std::shared_ptr<KeyWindow> display = nullptr;
 std::shared_ptr<SystemTray> tray = nullptr;
 
@@ -130,6 +133,21 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 PostQuitMessage(0);
                 break;
             } else if (LOWORD(wParam) == ID_TRAY_SETTINGS) {
+                if (!resourceFinder) {
+                    MessageBoxW(NULL, L"Unable to find settings.json file", L"Error", MB_OK);
+                }
+                std::wstring settingsPath = resourceFinder->getResource(L"settings.json");
+                HINSTANCE result = ShellExecuteW(
+                    NULL,
+                    L"open",
+                    settingsPath.c_str(),
+                    NULL,
+                    NULL,
+                    SW_SHOWNORMAL
+                );
+                if ((INT_PTR)result <= 32) {
+                    MessageBoxW(NULL, L"Failed to open settings.json!", L"Error", MB_OK);
+                }
                 // ShowWindow(settingsWindow->GetHwnd(), SW_SHOW);
                 break;
             }
@@ -141,6 +159,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
     gdiplusContext = std::make_unique<GdiplusContext>();
     settingsManager = std::make_unique<SettingsManager>();
+    resourceFinder = std::make_unique<ResourceFinder>();
 
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;

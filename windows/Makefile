@@ -2,7 +2,7 @@
 CXX = g++
 CXXFLAGS = -Wall -std=c++17 -Iinclude
 WINFLAGS = -mwindows -municode
-LIBFLAGS = -lsetupapi -lole32 -lgdi32 -lcomctl32 -lgdiplus
+LIBFLAGS = -lsetupapi -lole32 -lgdi32 -lcomctl32 -lgdiplus -lshell32
 SRC = $(wildcard src/*.cpp)
 HEADERS = $(wildcard include/*.h)
 OBJ = $(patsubst src/%.cpp, $(BUILD_DIR)/%.o, $(SRC))
