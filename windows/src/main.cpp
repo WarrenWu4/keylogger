@@ -148,7 +148,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 if ((INT_PTR)result <= 32) {
                     MessageBoxW(NULL, L"Failed to open settings.json!", L"Error", MB_OK);
                 }
-                // ShowWindow(settingsWindow->GetHwnd(), SW_SHOW);
                 break;
             }
         }
